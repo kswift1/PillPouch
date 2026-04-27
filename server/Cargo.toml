@@ -1,0 +1,22 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/api",
+    "crates/pusher",
+    "crates/domain",
+    "crates/storage",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.83"
+license = "Proprietary"
+repository = "https://github.com/kswift1/PillPouch"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
