@@ -16,6 +16,7 @@
 - **보고+승인 요청은 한 응답에 묶기** — "곧 드릴게요" 분리 금지 ([`docs/conventions/response-patterns.md` §1](docs/conventions/response-patterns.md))
 - **결함 진단 시 재발 방지 조치 필수** — 진단만 하고 박제 안 하면 결함 반복 ([`docs/conventions/ai-collab-meta.md` §1](docs/conventions/ai-collab-meta.md))
 - **백그라운드 작업 셋업 후 smoke test** — Monitor 등 시작 후 1 cycle 검증 필수 ([`docs/conventions/response-patterns.md` §3](docs/conventions/response-patterns.md))
+- **테스트 메서드명 한글 + 언더바, enum case별 `///` doc-comment** — 코드 스타일 룰 ([`docs/conventions/code-style.md`](docs/conventions/code-style.md))
 
 새 결함이 발견되면 [`docs/conventions/ai-collab-meta.md` §3 결함 박제 사례 표](docs/conventions/ai-collab-meta.md)에 1줄 추가.
 
