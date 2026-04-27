@@ -2,8 +2,6 @@
 //  PillPouchApp.swift
 //  PillPouch
 //
-//  Created by 김성원 on 4/27/26.
-//
 
 import SwiftUI
 import SwiftData
@@ -12,7 +10,10 @@ import SwiftData
 struct PillPouchApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Supplement.self,
+            IntakeSchedule.self,
+            IntakeLog.self,
+            UserSettings.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
