@@ -1,0 +1,65 @@
+name: iOS Build
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-build.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-build.yml'
+
+jobs:
+  build:
+    name: Build & Test (iOS)
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode / Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Pick first available iPhone simulator
+        id: sim
+        run: |
+          SIM_ID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone")) | .udid] | first')
+          if [ -z "$SIM_ID" ] || [ "$SIM_ID" = "null" ]; then
+            echo "No iPhone simulator available"; exit 1
+          fi
+          echo "sim_id=$SIM_ID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$SIM_ID"
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -scheme PillPouch \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Test
+        run: |
+          xcodebuild test \
+            -scheme PillPouch \
+            -destination "id=${{ steps.sim.outputs.sim_id }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload xcresult on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: ios/TestResults.xcresult
+          retention-days: 7
