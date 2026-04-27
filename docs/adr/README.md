@@ -19,13 +19,14 @@ Accepted | Superseded by ADR-XXXX | Deprecated
 긍정/부정 결과, 트레이드오프.
 ```
 
-## 목록 (예정 — W1-2에서 작성)
-- [ ] ADR-0001: Rust + Axum 백엔드
-- [ ] ADR-0002: SQLite + Litestream
-- [ ] ADR-0003: Fly.io 호스팅
-- [ ] ADR-0004: Monorepo
-- [ ] ADR-0005: SwiftUI 네이티브 (TCA 미사용)
-- [ ] ADR-0006: Hyper-Waterfall 적응형 (S/M/L)
+## 목록
+
+- [x] [ADR-0001: Rust + Axum 백엔드](0001-rust-axum-backend.md)
+- [x] [ADR-0002: SQLite + Litestream](0002-sqlite-litestream.md)
+- [x] [ADR-0003: Fly.io 호스팅](0003-fly-io-hosting.md)
+- [x] [ADR-0004: Monorepo](0004-monorepo.md)
+- [x] [ADR-0005: SwiftUI 네이티브 (TCA 미사용)](0005-no-tca-swiftui-native.md)
+- [x] [ADR-0006: Hyper-Waterfall 적응형 (S/M/L)](0006-hyper-waterfall-adaptive.md)
 
 ## 변경 룰
 ADR은 한번 Accepted되면 수정 X. 결정이 바뀌면 새 ADR로 Supersede.
