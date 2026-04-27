@@ -90,6 +90,32 @@ LLM이 사용자에게 응답할 때 반드시 따르는 패턴.
 - [ ] 출력 필터가 awk 탭 구분자(`-F'\t'`) 등 입력 형식을 정확히 반영하는가?
 - [ ] 첫 알림 도착 시 cross-check를 실제 명령으로 한 번 더 검증할 계획이 있는가?
 - [ ] 알림 본문에 사용한 escape/마크다운이 task-notification에서 깨지지 않는가? (예: `&` → `&amp;` 변환 주의)
+- [ ] **`TOTAL=0` 케이스 처리** — `gh pr checks` 결과가 0줄(=CI 자체가 trigger 안 됨)일 때도 종료해야. paths filter로 docs-only PR이 CI skip되면 무한 polling됨
+
+### Monitor 종료 조건 표준 패턴 (PR CI watch)
+
+```bash
+NO_CHECKS_TICKS=0
+while true; do
+  OUT=$(gh pr checks <PR_NUM> 2>&1 || true)
+  PENDING=$(echo "$OUT" | awk -F'\t' '{print $2}' | grep -cE '^(pending|queued|in_progress)$' || true)
+  TOTAL=$(echo "$OUT" | grep -c 'https://github' || true)
+  if [ "$TOTAL" -eq 0 ]; then
+    NO_CHECKS_TICKS=$((NO_CHECKS_TICKS + 1))
+    if [ "$NO_CHECKS_TICKS" -ge 3 ]; then
+      echo "=== PR <PR_NUM> NO CHECKS (3 ticks) — paths filter likely skipped all workflows ==="
+      break
+    fi
+  elif [ "$PENDING" -eq 0 ]; then
+    echo "=== PR <PR_NUM> CI DONE ==="
+    echo "$OUT" | awk -F'\t' '{printf "%s | %s | %s\n", $1, $2, $3}'
+    break
+  fi
+  sleep 30
+done
+```
+
+3 ticks(약 90초) 동안 checks 0개면 "trigger 안 됨"으로 판단하고 종료. 30초만 기다리면 GitHub의 trigger 지연으로 false positive 가능.
 
 ---
 
