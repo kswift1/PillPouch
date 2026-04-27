@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/api",
+    "crates/pusher",
+    "crates/domain",
+    "crates/storage",
+]
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.83"
+license = "Proprietary"
+repository = "https://github.com/kswift1/PillPouch"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+module_name_repetitions = "allow"
+# 한국어 doc 주석에 Axum/SQLite/APNs 등 영문 키워드가 자주 등장.
+# 코드 식별자처럼 매번 백틱 감싸는 비용 > 얻는 가치.
+# 의식적으로 백틱 쓰는 것은 자유.
+doc_markdown = "allow"
