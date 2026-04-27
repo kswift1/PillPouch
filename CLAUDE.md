@@ -7,6 +7,18 @@
 **바이브 코딩이 아니다.** 모든 계획은 검토되고, 모든 결과물은 검증되며,
 모든 결정의 뒤에는 사람이 있다. AI는 배율기다. **사람은 절대 생각을 멈추지 않는다.**
 
+## 협업 컨벤션 (필독)
+
+응답 패턴, AI 협업 메타-룰은 [`docs/conventions/`](docs/conventions/)에 단일 소스로 박제됨.
+이 폴더는 모든 LLM(Claude/Codex/Cursor 등)과 사람이 공통으로 따르는 룰. **메모리 시스템 같은 LLM 전용 위치엔 박제 금지** (다른 LLM이 못 보고 사용자가 제어 불가).
+
+핵심 룰 요약:
+- **보고+승인 요청은 한 응답에 묶기** — "곧 드릴게요" 분리 금지 ([`docs/conventions/response-patterns.md` §1](docs/conventions/response-patterns.md))
+- **결함 진단 시 재발 방지 조치 필수** — 진단만 하고 박제 안 하면 결함 반복 ([`docs/conventions/ai-collab-meta.md` §1](docs/conventions/ai-collab-meta.md))
+- **백그라운드 작업 셋업 후 smoke test** — Monitor 등 시작 후 1 cycle 검증 필수 ([`docs/conventions/response-patterns.md` §3](docs/conventions/response-patterns.md))
+
+새 결함이 발견되면 [`docs/conventions/ai-collab-meta.md` §3 결함 박제 사례 표](docs/conventions/ai-collab-meta.md)에 1줄 추가.
+
 ## 절대 금지
 
 - ❌ Issue 등록·브랜치·계획서 단계 생략
