@@ -9,25 +9,25 @@ import Foundation
 @testable import PillPouch
 
 @Suite struct EnumRoundtripTests {
-    @Test func capsuleTypeRoundtrip() {
+    @Test func 캡슐타입_raw값_왕복_복원() {
         for c in CapsuleType.allCases {
             #expect(CapsuleType(rawValue: c.rawValue) == c)
         }
     }
 
-    @Test func timeSlotRoundtrip() {
+    @Test func 시간슬롯_raw값_왕복_복원() {
         for s in TimeSlot.allCases {
             #expect(TimeSlot(rawValue: s.rawValue) == s)
         }
     }
 
-    @Test func intakeStatusRoundtrip() {
+    @Test func 복용상태_raw값_왕복_복원() {
         for s in IntakeStatus.allCases {
             #expect(IntakeStatus(rawValue: s.rawValue) == s)
         }
     }
 
-    @Test func capsuleTypeRawIsStable() {
+    @Test func 캡슐타입_raw값_안정성_고정() {
         #expect(CapsuleType.tablet.rawValue == "tablet")
         #expect(CapsuleType.softgel.rawValue == "softgel")
         #expect(CapsuleType.capsule.rawValue == "capsule")
@@ -36,13 +36,13 @@ import Foundation
         #expect(CapsuleType.gummy.rawValue == "gummy")
     }
 
-    @Test func timeSlotRawIsStable() {
+    @Test func 시간슬롯_raw값_안정성_고정() {
         #expect(TimeSlot.morning.rawValue == "morning")
         #expect(TimeSlot.lunch.rawValue == "lunch")
         #expect(TimeSlot.evening.rawValue == "evening")
     }
 
-    @Test func intakeStatusRawIsStable() {
+    @Test func 복용상태_raw값_안정성_고정() {
         #expect(IntakeStatus.taken.rawValue == "taken")
         #expect(IntakeStatus.missed.rawValue == "missed")
         #expect(IntakeStatus.skipped.rawValue == "skipped")
@@ -50,7 +50,7 @@ import Foundation
 }
 
 @Suite struct SupplementComputedTests {
-    @Test func capsuleTypeComputedSetUpdatesRaw() {
+    @Test func 캡슐타입_setter_호출시_raw값_동기화() {
         let s = Supplement(name: "비타민D", capsuleType: .softgel)
         #expect(s.capsuleTypeRaw == "softgel")
         s.capsuleType = .gummy
@@ -58,7 +58,7 @@ import Foundation
         #expect(s.capsuleType == .gummy)
     }
 
-    @Test func capsuleTypeFallsBackOnInvalidRaw() {
+    @Test func 캡슐타입_잘못된_raw_입력시_capsule로_폴백() {
         let s = Supplement(name: "오메가-3", capsuleType: .softgel)
         s.capsuleTypeRaw = "not-a-real-type"
         #expect(s.capsuleType == .capsule)
@@ -66,7 +66,7 @@ import Foundation
 }
 
 @Suite struct IntakeLogComputedTests {
-    @Test func statusComputedSetUpdatesRaw() {
+    @Test func 복용상태_setter_호출시_raw값_동기화() {
         let s = Supplement(name: "비타민C", capsuleType: .tablet)
         let log = IntakeLog(supplement: s, timeSlot: .morning, status: .taken)
         #expect(log.statusRaw == "taken")
@@ -75,7 +75,7 @@ import Foundation
         #expect(log.status == .skipped)
     }
 
-    @Test func timeSlotComputedSetUpdatesRaw() {
+    @Test func 시간슬롯_setter_호출시_raw값_동기화() {
         let s = Supplement(name: "비타민C", capsuleType: .tablet)
         let log = IntakeLog(supplement: s, timeSlot: .morning, status: .taken)
         log.timeSlot = .evening
@@ -85,7 +85,7 @@ import Foundation
 }
 
 @Suite struct UserSettingsTests {
-    @Test func defaultTimes() {
+    @Test func 사용자설정_기본_슬롯시각_반환() {
         let s = UserSettings()
         let morning = s.time(for: .morning)
         let lunch = s.time(for: .lunch)
@@ -95,7 +95,7 @@ import Foundation
         #expect(evening.hour == 19 && evening.minute == 0)
     }
 
-    @Test func customTimesAreReturned() {
+    @Test func 사용자설정_커스텀_슬롯시각_반환() {
         let s = UserSettings(
             morningHour: 7, morningMinute: 15,
             lunchHour: 13, lunchMinute: 0,
@@ -106,20 +106,20 @@ import Foundation
         #expect(s.time(for: .evening) == (20, 45))
     }
 
-    @Test func defaultTimezoneIsAsiaSeoul() {
+    @Test func 사용자설정_기본_타임존은_AsiaSeoul() {
         let s = UserSettings()
         #expect(s.timezoneIdentifier == "Asia/Seoul")
         #expect(s.timezone.identifier == "Asia/Seoul")
     }
 
-    @Test func timezoneFallsBackOnInvalidIdentifier() {
+    @Test func 사용자설정_잘못된_타임존_입력시_current로_폴백() {
         let s = UserSettings(timezoneIdentifier: "Not/AReal_Zone")
         #expect(s.timezone == TimeZone.current)
     }
 }
 
 @Suite struct ModelContainerSmokeTests {
-    private func makeInMemoryContainer() throws -> ModelContainer {
+    private func 인메모리_컨테이너_생성() throws -> ModelContainer {
         let schema = Schema([
             Supplement.self,
             IntakeSchedule.self,
@@ -130,8 +130,8 @@ import Foundation
         return try ModelContainer(for: schema, configurations: [config])
     }
 
-    @Test func canInsertAndFetchSupplement() throws {
-        let container = try makeInMemoryContainer()
+    @Test func 모델컨테이너_supplement_삽입_후_조회() throws {
+        let container = try 인메모리_컨테이너_생성()
         let context = ModelContext(container)
         let s = Supplement(name: "오메가-3", capsuleType: .softgel)
         context.insert(s)
@@ -142,8 +142,8 @@ import Foundation
         #expect(fetched.first?.capsuleType == .softgel)
     }
 
-    @Test func cascadeDeleteRemovesSchedulesAndLogs() throws {
-        let container = try makeInMemoryContainer()
+    @Test func cascade_삭제시_하위_schedule과_log_제거() throws {
+        let container = try 인메모리_컨테이너_생성()
         let context = ModelContext(container)
         let s = Supplement(name: "비타민C", capsuleType: .tablet)
         context.insert(s)
@@ -164,8 +164,8 @@ import Foundation
         #expect(try context.fetch(FetchDescriptor<IntakeLog>()).isEmpty)
     }
 
-    @Test func canPersistUserSettings() throws {
-        let container = try makeInMemoryContainer()
+    @Test func 사용자설정_저장_후_조회() throws {
+        let container = try 인메모리_컨테이너_생성()
         let context = ModelContext(container)
         let settings = UserSettings()
         context.insert(settings)
