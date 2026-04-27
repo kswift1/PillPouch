@@ -70,6 +70,27 @@ LLM이 사용자에게 응답할 때 반드시 따르는 패턴.
 - **2026-04-27 PR #2 CI watch v1**: awk 공백 split 버그로 false positive 알림 → 즉시 stream end → 검증 없었으면 잘못된 결과 보고할 뻔
 - 교훈: Monitor 셋업 직후 첫 polling cycle에서 출력 1줄이라도 직접 확인했어야
 
+### 시스템 제약 — Bash 능동 polling 금지
+
+이 환경에서는 다음이 차단된다 (`sleep`/`until` 직접 실행으로 polling 흉내 금지):
+- 60초 이상의 leading `sleep`
+- `until <check>; do sleep N; done` 같은 명시적 polling loop
+- 짧은 sleep을 chain해서 우회하는 패턴
+
+→ smoke test도 사람 polling으로 못 함. 대신:
+
+1. **Monitor 도구가 background polling을 담당** (`while true; do ...; sleep 30; done` 안에 종료 조건 + 알림)
+2. **smoke 신호는 Monitor 첫 알림으로 갈음** — 첫 알림이 정상 형식으로 오면 polling 루프와 출력 파싱이 살아있다는 증거
+3. **추가 검증이 필요하면 Monitor 스크립트 첫 라인에 `echo "[smoke] poll 1"` 같은 진단 출력 추가** — 노이즈 1라인으로 alive 신호 확보 (단, 매 cycle마다 echo는 노이즈 폭주이므로 첫 cycle만)
+4. **Monitor 알림이 와도 본문 그대로 신뢰 X** — `gh pr checks` 같은 명령으로 한 번 더 cross-check
+
+### Monitor 셋업 체크리스트
+
+- [ ] 종료 조건이 모든 terminal state(pass/fail/cancelled)를 커버하는가? "silence is not success"
+- [ ] 출력 필터가 awk 탭 구분자(`-F'\t'`) 등 입력 형식을 정확히 반영하는가?
+- [ ] 첫 알림 도착 시 cross-check를 실제 명령으로 한 번 더 검증할 계획이 있는가?
+- [ ] 알림 본문에 사용한 escape/마크다운이 task-notification에서 깨지지 않는가? (예: `&` → `&amp;` 변환 주의)
+
 ---
 
 ## 변경 이력
