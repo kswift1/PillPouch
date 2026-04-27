@@ -28,13 +28,27 @@ jobs:
           xcodebuild -version
           swift --version
 
+      - name: Ensure iOS Simulator runtime
+        run: |
+          # visionOS 키 매칭 방지: SimRuntime.iOS- 정확 매칭
+          HAS_IOS=$(xcrun simctl list devices available -j \
+            | jq '[.devices | to_entries[] | select(.key | test("SimRuntime\\.iOS-")) | .value[] | select(.name | startswith("iPhone"))] | length')
+          echo "Available iPhone (iOS) simulators: $HAS_IOS"
+          if [ "$HAS_IOS" -eq 0 ]; then
+            echo "No iOS Simulator runtime found, downloading..."
+            sudo xcodebuild -runFirstLaunch
+            xcodebuild -downloadPlatform iOS
+          fi
+
       - name: Pick first available iPhone simulator
         id: sim
         run: |
           SIM_ID=$(xcrun simctl list devices available -j \
-            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone")) | .udid] | first')
+            | jq -r '[.devices | to_entries[] | select(.key | test("SimRuntime\\.iOS-")) | .value[] | select(.name | startswith("iPhone")) | .udid] | first')
           if [ -z "$SIM_ID" ] || [ "$SIM_ID" = "null" ]; then
-            echo "No iPhone simulator available"; exit 1
+            echo "No iPhone (iOS) simulator available even after download attempt"
+            xcrun simctl list devices
+            exit 1
           fi
           echo "sim_id=$SIM_ID" >> "$GITHUB_OUTPUT"
           xcrun simctl list devices available | grep "$SIM_ID"
