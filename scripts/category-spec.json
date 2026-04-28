@@ -1,10 +1,16 @@
 {
-  "_comment": "캡슐 6종 base size (pt). @1x=base, @2x=base*2, @3x=base*3로 imageset 생성. base 사이즈는 list slot 32pt + Today hero 96~128pt 모두 커버하도록 128로 통일. 비율은 §7.2 표 유지(가로:세로).",
+  "_comment": "ADR-0007 12종 카테고리 시드. ratio 모두 1:1 (정사각형) — 시리즈 일관성 우선. base 128pt — list 32pt + Today hero 96~128pt 모두 커버.",
   "_base_size": 128,
-  "tablet":  { "ratio": "1:1",   "tone": "single" },
-  "softgel": { "ratio": "1:1",   "tone": "single" },
-  "capsule": { "ratio": "1:1",   "tone": "two" },
-  "powder":  { "ratio": "20:28", "tone": "single" },
-  "liquid":  { "ratio": "20:28", "tone": "single" },
-  "gummy":   { "ratio": "1:1",   "tone": "single" }
+  "omega3":           { "ratio": "1:1", "tone": "single" },
+  "vitaminC":         { "ratio": "1:1", "tone": "single" },
+  "vitaminD":         { "ratio": "1:1", "tone": "single" },
+  "vitaminB":         { "ratio": "1:1", "tone": "single" },
+  "multivitamin":     { "ratio": "1:1", "tone": "single" },
+  "calciumMagnesium": { "ratio": "1:1", "tone": "single" },
+  "probiotics":       { "ratio": "1:1", "tone": "single" },
+  "iron":             { "ratio": "1:1", "tone": "single" },
+  "zinc":             { "ratio": "1:1", "tone": "single" },
+  "lutein":           { "ratio": "1:1", "tone": "single" },
+  "collagen":         { "ratio": "1:1", "tone": "single" },
+  "other":            { "ratio": "1:1", "tone": "single" }
 }
