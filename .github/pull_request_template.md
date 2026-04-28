@@ -16,6 +16,13 @@
 - [ ] (UI 변경) Snapshot 테스트 PNG 갱신
 - [ ] CI 통과
 
+## PR 메타 (M/L 필수)
+- [ ] 이슈와 동일한 **라벨**(size:* / area:* / type:*) PR에도 부착
+- [ ] 이슈와 동일한 **마일스톤**(W{N}) PR에도 부여
+- [ ] (이 PR로 마일스톤의 마지막 이슈가 닫히면) 마일스톤 close 환기
+
+자세한 룰: [`docs/conventions/response-patterns.md` §4](../docs/conventions/response-patterns.md#4-pr-메타-동기화-라벨마일스톤)
+
 ## Screenshots
 <!-- UI 변경 시 docs/screenshots/<feature>/ 에 커밋한 PNG 링크 또는 직접 첨부 -->
 

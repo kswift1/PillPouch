@@ -56,8 +56,8 @@
 4. 단일 PR 단위로 구현 (Conventional Commits)
 5. CI 통과 (테스트 + Clippy/SwiftLint)
 6. `docs/report/task_W{N}_{이슈}_report.md` 작성 → **승인 ⛔**
-7. PR 본문에 계획서/보고서 링크 → Squash merge
-8. Issue 자동 close (`Closes #N`)
+7. PR 본문에 계획서/보고서 링크 → **PR에도 이슈와 동일 라벨/마일스톤 부착** (`gh pr edit --milestone W{N} --add-label ...`) → Squash merge
+8. Issue 자동 close (`Closes #N`) → 마일스톤의 마지막 이슈면 마일스톤 close 환기
 
 ### L 태스크 절차
 M에 더해:
