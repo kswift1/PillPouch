@@ -54,7 +54,7 @@ V1.1 후순위 (시장조사 후 제외):
 | 5 | `multivitamin` | 종합 비타민 | 큰 oval tablet (matte) | #C9A878 tan | 표면 점박이 5~8개 |
 | 6 | `calcium` | 칼슘 | 큰 두툼 oval (matte chalky) | #E5DCCC 화이트 크림 | 가장 큰 + 두툼 + 매끈 |
 | 7 | `magnesium` | 마그네슘 | round disc (matte) | #A8AABE 쿨 슬레이트 | 차가운 회청색 |
-| 8 | `probiotics` | 유산균 | 작은 캡슐 (matte 단색) | #E5B0B5 파스텔 핑크 | 캡슐 형태 (반원 양끝) |
+| 8 | `probiotics` | 유산균 | 작은 캡슐 (반투명 외피 + 흰 분말 + seam) | #F5F0E8 오프화이트 분말 | 반투명 캡슐 + 흰 분말 가시 + 가운데 seam |
 | 9 | `iron` | 철분 | round disc (matte) | #5E4E45 다크 그레이-갈색 | 매우 어두운 단색 |
 | 10 | `zinc` | 아연 | round disc (matte) | #B8A595 따뜻한 taupe | 라이트 그레이-베이지 |
 | 11 | `lutein` | 루테인 | oval softgel (semi-gloss) | #C9B068 골든 머스타드 | softgel + 약간 글로시 |
@@ -77,14 +77,16 @@ V1.1 후순위 (시장조사 후 제외):
 
 ### 변별 축 2: 재질
 
-- **strict matte**: 모든 정제(tablet) 카테고리, 캡슐 카테고리(probiotics, milkThistle), magnesium, iron, zinc, calcium, glucosamine, multivitamin, vitaminC/B, vitaminD, other
+- **strict matte**: 모든 정제(tablet) 카테고리, milkThistle 캡슐 (단색 opaque), magnesium, iron, zinc, calcium, glucosamine, multivitamin, vitaminC/B, vitaminD, other
+- **translucent (반투명) + 분말 가시**: probiotics (시판 vegetarian capsule cliché — 흰 분말이 안에 보임, 가운데 seam 가시)
 - **semi-gloss**: lutein, collagen (살짝 반투명, 매트보다 살짝 빛 반사)
 - **glossy translucent**: omega3, coq10 (어유/CoQ10 실물 정합)
 
 ### 변별 축 3: 색 (5 그룹)
 
 - **노랑/오렌지/앰버**: omega3, vitaminC, vitaminD, lutein
-- **레드/핑크/코랄**: vitaminB, probiotics, collagen, coq10
+- **레드/핑크/코랄**: vitaminB, collagen, coq10
+- **흰색/오프화이트**: probiotics (반투명 외피 + 흰 분말, 시판 vegetarian capsule cliché)
 - **탠/베이지/크림**: multivitamin, calcium, glucosamine, other
 - **올리브 황녹**: milkThistle (단독)
 - **그레이/메탈**: magnesium, iron, zinc
@@ -94,6 +96,7 @@ V1.1 후순위 (시장조사 후 제외):
 - **score line 가운데 세로**: vitaminC, vitaminB
 - **score line 가운데 가로**: glucosamine
 - **점박이**: multivitamin
+- **가운데 seam line (capsule 카테고리)**: probiotics, milkThistle (두 반쪽 조립 캡슐 cliché)
 - **매끈 (no detail)**: 그 외 모두
 
 같은 색 그룹 내에선 형태·재질·표면이 모두 변별 보강. 32pt에서 헷갈리는 페어 시뮬레이션 필요 시 색조 미세 조정 가능.
@@ -287,9 +290,9 @@ Constraints (extra): NO oval, NO oblong, NO softgel, NO glossy, NO warm tones (t
 ```
 Material: STRICTLY matte, non-glossy. Single uniform color across the whole capsule (NOT two-tone, NOT split-color).
 
-Subject: a single SMALL capsule resembling a probiotic supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, but DELIBERATELY SMALLER than the reference tablet (about 80% of the reference's frame width). The capsule is a single solid uniform color across both halves (NO color split, NO two-tone). Solid muted pastel pink color (#E5B0B5), evoking a friendly probiotic supplement. Surface is smooth — NO seam line visible, NO logos, NO printed text, NO speckles.
+Subject: a single SMALL probiotic supplement capsule (in the style of Jarrow-Dophilus / Culturelle / generic translucent gelatin capsule with probiotic powder) — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, but DELIBERATELY SMALLER than the reference tablet (about 80% of the reference's frame width). The capsule shell is TRANSLUCENT/CLEAR (no color tint, just faint transparent gelatin outline), and inside the capsule is filled with bright OFF-WHITE powder (#F5F0E8 to #FFFFFF), gently visible through the shell — the powder fills most of the capsule body and creates a slightly grainy texture. A subtle SEAM LINE at the exact middle of the capsule MUST be visible (the join between the two capsule halves — a thin shallow groove perpendicular to the long axis, like a real two-piece vegetarian capsule). NO logos, NO printed text.
 
-Constraints (extra): NO round disc, NO softgel, NO oblong tablet (with sharp ends — the ends must be perfectly rounded semicircles), NO glossy, NO two-tone color, NO seam visible.
+Constraints (extra): NO round disc, NO softgel (translucent gelatin filled with liquid like fish oil — this is filled with POWDER not liquid), NO oblong tablet (the ends MUST be perfectly rounded semicircles like a capsule), NO solid opaque colored shell, NO two-tone color split, NO sharp specular reflections.
 ```
 
 #### 9. iron (철분) — 신규
@@ -347,9 +350,9 @@ Constraints (extra): NO tablet, NO round disc, NO sharp glossy reflections. Soft
 ```
 Material: STRICTLY matte, non-glossy. Single uniform color across the whole capsule.
 
-Subject: a single capsule resembling a milk thistle supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, similar size to the reference tablet. Single solid uniform color across both halves (NO color split, NO two-tone). Solid muted dark olive-yellow-green color (#7A6E3A), a deep olive/khaki tone evoking dried herbal extract. Surface is smooth — NO seam line visible, NO logos, NO printed text.
+Subject: a single capsule resembling a milk thistle supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, similar size to the reference tablet. Single solid uniform color across both halves (NO color split, NO two-tone). Solid muted dark olive-yellow-green color (#7A6E3A), a deep olive/khaki tone evoking dried herbal extract. A subtle SEAM LINE at the exact middle of the capsule MUST be visible (the join between the two capsule halves — a thin shallow groove perpendicular to the long axis, like a real two-piece capsule). Surface is smooth — NO logos, NO printed text.
 
-Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color, NO seam visible. The color must be distinctly olive-green-brown — NOT pure pink (probiotics), NOT charcoal (iron).
+Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color split (the seam is just a structural line, not a color boundary). The color must be distinctly olive-green-brown — NOT pure pink (probiotics), NOT charcoal (iron).
 ```
 
 #### 14. glucosamine (글루코사민) — 신규
@@ -386,7 +389,7 @@ Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy transluc
 2. **milkThistle vs iron 색 충돌** — 둘 다 어두운 톤. **완화**: milkThistle은 올리브 황녹(#7A6E3A, 캡슐 형태), iron은 다크 그레이-갈색(#5E4E45, round disc) — 색조 + 형태 차이. 32pt에서 충분 변별.
 3. **omega3 vs coq10 글로시 softgel 색 충돌** — 둘 다 글로시 oval softgel + 따뜻한 톤. **완화**: omega3는 골든 amber(#E5B570, 노랑끼), coq10은 진한 코랄(#E5704A, 빨강끼) — 색조 차이 명확. 식별성 검증 단계에서 헷갈리면 coq10을 더 진한 색(#D55A38)으로 조정.
 4. **calcium vs glucosamine 색 충돌** — 둘 다 옅은 베이지/크림. **완화**: calcium 화이트크림(#E5DCCC), glucosamine 라이트 베이지 노랑(#E8DCB8) — 색 살짝 다름. 형태/사이즈/표면 차이로 보완 (calcium 두툼 매끈, glucosamine 일반 두께 + 가로 score).
-5. **probiotics vs collagen 핑크 충돌** — 둘 다 핑크 톤. **완화**: probiotics 작은 캡슐(파스텔 핑크 #E5B0B5), collagen 일반 oval softgel(핑크 베이지 #E5C8B0) — 형태/사이즈/재질 모두 다름.
+5. **probiotics vs calcium 흰색 충돌** — probiotics 반투명 캡슐 + 흰 분말, calcium 매트 화이트크림 oblong. **완화**: 형태(작은 capsule vs 큰 oblong) + 재질(반투명 + grainy 분말 vs 매트 chalky) + 사이즈로 명확 변별. 색은 둘 다 흰색대지만 재질 차이가 결정적.
 6. **multivitamin oval + 점박이가 32pt에서 점박이 안 보일 가능성** — 점박이가 1픽셀 이하로 떨어질 수 있음. **완화**: 점박이를 4-6%로 조정 (큰 점), 작업지시자가 32pt 미리 보기로 가시성 검증.
 7. **16종 GPT Image 2 호출 톤 일관성** — 17번 호출 사이 카메라 각도 미세 어긋남. **완화**: 모든 프롬프트에 reference 첨부 + "IDENTICAL camera angle" 강조.
 8. **Korean market의 새 카테고리 추가/축소 가능성** — 도그푸딩 후 `other` 비율이 30%+면 V1.1에 더 추가. 현재 16종은 V1.0 시드.

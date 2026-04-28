@@ -30,7 +30,7 @@
 | # | key | 한글 | 형태 | 색 | 식별 핵심 | 도착 |
 |---|---|---|---|---|---|---|
 | 1 | omega3 | 오메가-3 | 글로시 oval softgel | 골든 앰버 | 글로시 + 따뜻한 amber | ✅ |
-| 2 | probiotics | 유산균 | 작은 캡슐 | 파스텔 핑크 | 캡슐 형태 + 작음 | ⏳ |
+| 2 | probiotics | 유산균 | 반투명 캡슐 + 흰 분말 + seam | 오프화이트 | 시판 vegetarian capsule cliché | ✅ |
 | 3 | vitaminC | 비타민 C | matte oblong | 옅은 노랑 | 세로 score | ✅ |
 | 4 | multivitamin | 종합 비타민 | 큰 oval | tan | 표면 점박이 | ✅ |
 | 5 | vitaminD | 비타민 D | 작은 round disc | 머스타드 노랑 | 작은 사이즈 | ✅ |
@@ -40,13 +40,13 @@
 | 9 | lutein | 루테인 | semi-gloss oval softgel | 골든 머스타드 | 살짝 글로시 | ⏳ |
 | 10 | collagen | 콜라겐 | semi-gloss oval softgel | 핑크 베이지 | 핑크 톤 softgel | ⏳ |
 | 11 | magnesium | 마그네슘 | round disc | 쿨 슬레이트 | 차가운 회청색 | ⏳ |
-| 12 | calcium | 칼슘 | 큰 두툼 oval | 화이트 크림 | 가장 큼 + 두툼 | ⏳ |
+| 12 | calcium | 칼슘 | 큰 두툼 oblong | 따뜻 화이트 #E8E0D0 | 가장 큼 + 두툼 + 매트 chalky | ✅ |
 | 13 | iron | 철분 | round disc | 다크 그레이-갈색 | 가장 어두움 | ⏳ |
 | 14 | zinc | 아연 | round disc | 라이트 taupe | 라이트 그레이-베이지 | ⏳ |
 | 15 | coq10 | 코엔자임 Q10 | 글로시 oval softgel | 진한 코랄 | 글로시 + 코랄 | ⏳ |
 | 16 | other | 기타 | round disc | 베이지 (v4) | 시드 외 폴백 | ✅ |
 
-**현재 도착**: 6장 / **남은 작업**: 10장
+**현재 도착**: 8장 / **남은 작업**: 8장 (milkThistle, glucosamine, lutein, collagen, magnesium, iron, zinc, coq10)
 
 ## 변경된 파일 (Claude 작업)
 
@@ -69,7 +69,7 @@
 1. **형태**: round disc / oval-oblong tablet / softgel / capsule (4 그룹)
 2. **재질**: strict matte / semi-gloss / glossy translucent (3 그룹)
 3. **색**: 노랑-오렌지 / 레드-핑크 / 베이지-탠 / 올리브(milkThistle 단독) / 그레이-메탈 (5 그룹)
-4. **표면 detail**: 세로 score (vitaminC/B) / 가로 score (glucosamine) / 점박이 (multivitamin) / 매끈 (그 외)
+4. **표면 detail**: 세로 score (vitaminC/B) / 가로 score (glucosamine) / 점박이 (multivitamin) / 가운데 seam (probiotics·milkThistle 캡슐) / 매끈 (그 외)
 
 같은 색 그룹 내에선 형태·재질·표면이 모두 변별 보강.
 
@@ -79,7 +79,7 @@
 |---|---|---|
 | omega3 vs coq10 | 둘 다 글로시 oval softgel + 따뜻한 톤 | 색 톤 차 (omega3 노랑끼 amber, coq10 빨강끼 코랄) |
 | calcium vs glucosamine | 둘 다 옅은 베이지 | 형태 (calcium 두툼, glucosamine 일반 + 가로 score) |
-| probiotics vs collagen | 둘 다 핑크 | 형태 (probiotics 캡슐, collagen oval softgel) + 사이즈 |
+| probiotics vs calcium | 둘 다 흰색대 | 형태 (작은 capsule vs 큰 oblong) + 재질 (반투명 + 분말 grainy vs 매트 chalky) — 결정적으로 다름 |
 | milkThistle vs iron | 둘 다 어두운 톤 | 색조 (milkThistle 올리브 황녹, iron 다크그레이-갈색) + 형태 (milkThistle 캡슐, iron round disc) |
 | magnesium vs zinc vs iron | 그레이 3종 | 색 톤 (magnesium 쿨슬레이트, zinc 따뜻 taupe, iron 다크 갈색-그레이) |
 

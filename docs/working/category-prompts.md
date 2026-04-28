@@ -96,9 +96,11 @@ Constraints (extra): NO oval, NO oblong, NO softgel, NO glossy, NO warm tones (t
 ```
 Material: STRICTLY matte, non-glossy. Single uniform color across the whole capsule (NOT two-tone, NOT split-color).
 
-Subject: a single SMALL capsule resembling a probiotic supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, but DELIBERATELY SMALLER than the reference tablet (about 80% of the reference's frame width). The capsule is a single solid uniform color across both halves (NO color split, NO two-tone). Solid muted pastel pink color (#E5B0B5), evoking a friendly probiotic supplement. Surface is smooth — NO seam line visible, NO logos, NO printed text, NO speckles.
+Material override for this category: TRANSLUCENT vegetarian capsule shell (clear/colorless gelatin or HPMC) filled with WHITE powder visible through the shell. The shell is faintly visible as a soft transparent outline (not strongly tinted), and the white powder filling occupies most of the visible volume. Surface looks slightly glossy (like a real gelatin capsule), with a small soft white highlight on the upper-left of the shell.
 
-Constraints (extra): NO round disc, NO softgel (translucent gelatin), NO oblong tablet (the ends MUST be perfectly rounded semicircles like a capsule), NO glossy, NO two-tone color, NO seam visible.
+Subject: a single SMALL probiotic supplement capsule (in the style of Jarrow-Dophilus / Culturelle / generic translucent gelatin capsule with probiotic powder) — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, but DELIBERATELY SMALLER than the reference tablet (about 80% of the reference's frame width). The capsule shell is TRANSLUCENT/CLEAR (no color tint, just faint transparent gelatin outline), and inside the capsule is filled with bright OFF-WHITE powder (#F5F0E8 to #FFFFFF), gently visible through the shell — the powder fills most of the capsule body and creates a slightly grainy texture. A subtle SEAM LINE at the exact middle of the capsule MUST be visible (the join between the two capsule halves — a thin shallow groove perpendicular to the long axis, like a real two-piece vegetarian capsule). NO logos, NO printed text.
+
+Constraints (extra): NO round disc, NO softgel (translucent gelatin filled with liquid like fish oil — this is filled with POWDER not liquid), NO oblong tablet (the ends MUST be perfectly rounded semicircles like a capsule), NO solid opaque colored shell, NO two-tone color split, NO sharp specular reflections.
 ```
 
 **평가 체크**: 캡슐 형태 (반원 끝) + 작은 사이즈 + 파스텔 핑크 단색
@@ -176,9 +178,9 @@ Constraints (extra): NO tablet, NO round disc, NO sharp glossy reflections. Soft
 ```
 Material: STRICTLY matte, non-glossy. Single uniform color across the whole capsule.
 
-Subject: a single capsule resembling a milk thistle supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, similar size to the reference tablet. Single solid uniform color across both halves (NO color split, NO two-tone). Solid muted dark olive-yellow-green color (#7A6E3A), a deep olive/khaki tone evoking dried herbal extract. Surface is smooth — NO seam line visible, NO logos, NO printed text.
+Subject: a single capsule resembling a milk thistle supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, similar size to the reference tablet. Single solid uniform color across both halves (NO color split, NO two-tone). Solid muted dark olive-yellow-green color (#7A6E3A), a deep olive/khaki tone evoking dried herbal extract. A subtle SEAM LINE at the exact middle of the capsule MUST be visible (the join between the two capsule halves — a thin shallow groove perpendicular to the long axis, like a real two-piece capsule). Surface is smooth — NO logos, NO printed text.
 
-Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color, NO seam visible. The color must be distinctly olive-green-brown — NOT pure brown (redGinseng), NOT pure pink (probiotics).
+Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color split (the seam is just a structural line, not a color boundary). The color must be distinctly olive-green-brown — NOT pure pink (probiotics), NOT charcoal (iron).
 ```
 
 **평가 체크**: 캡슐 형태 + 올리브 황녹 (iron 다크그레이와 명확히 다른 녹 끼)
