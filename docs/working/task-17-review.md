@@ -112,7 +112,26 @@ ChatGPT에 첨부할 reference 이미지: `design/categories/raw/other.png` (v4 
 
 ### Step 3: 시리즈 일관성 검증 (작업지시자)
 
-17장 그리드 캡처 → 한 화면에서 톤·카메라·shadow 결 일관성 점검. 어긋난 1~2종만 재생성 가능.
+**자동 그리드 생성 스크립트 사용**:
+
+```bash
+./scripts/preview-categories.sh
+# → docs/screenshots/categories/ 안에 5개 그리드 자동 생성:
+#    - grid-32pt.png (변별 검증)
+#    - grid-64pt.png
+#    - grid-96pt.png
+#    - grid-128pt.png (시리즈 일관성 검증)
+#    - grid-by-color.png (색 그룹별 분리)
+```
+
+각 PNG는 PPColor.background(#FAF7F2) 위에 합성됨 — 봉지/Today 화면 실제 배경에서 어떻게 보이는지 시각 검증 가능.
+
+**검증 체크**:
+- `grid-128pt.png`: 17장 톤·카메라·shadow 일관성
+- `grid-32pt.png`: 32pt 작은 사이즈에서 카테고리 식별성
+- `grid-by-color.png`: 같은 색 그룹 내 카테고리 변별
+
+어긋난 1~2종만 재생성 후 스크립트 재실행으로 즉시 비교.
 
 ### Step 4: PR ready 전환 + 머지
 
