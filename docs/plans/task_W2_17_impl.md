@@ -1,4 +1,4 @@
-# task_W2_17_impl.md — 카테고리 17종 시드 자산 + JSON 동봉 구현계획서
+# task_W2_17_impl.md — 카테고리 16종 시드 자산 + JSON 동봉 구현계획서
 
 ## 메타
 
@@ -6,7 +6,7 @@
 |---|---|
 | Issue | [#17](https://github.com/kswift1/PillPouch/issues/17) |
 | 마일스톤 | W2 |
-| 크기 | M (시장조사 후 12 → 17종 확장) |
+| 크기 | M (시장조사 후 12 → 16종 확장) |
 | 영역 | area:design + area:ios |
 | 타입 | type:feat |
 | 브랜치 | `local/task17` |
@@ -15,7 +15,7 @@
 
 ## 목표
 
-ADR-0007 결정에 따라 영양제 카테고리 시드 자산 + JSON을 앱 번들에 동봉. **본 task 진행 중 한국 시장 조사로 12종 → 17종으로 확장 결정** — 시장 30% 점유 홍삼·간 건강 밀크씨슬·관절 5060 핵심 글루코사민·항산화 CoQ10·단독 마그네슘 추가.
+ADR-0007 결정에 따라 영양제 카테고리 시드 자산 + JSON을 앱 번들에 동봉. **본 task 진행 중 한국 시장 조사로 12종 → 17종 확장 검토 → 작업지시자 결정으로 redGinseng(홍삼) 제거 → 16종 최종** — 간 건강 밀크씨슬·관절 5060 핵심 글루코사민·항산화 CoQ10·단독 마그네슘 추가.
 
 ## 비목표
 
@@ -33,7 +33,7 @@ ADR-0007 결정에 따라 영양제 카테고리 시드 자산 + JSON을 앱 번
 - **시니어 핵심**: 글루코사민·콘드로이친·MSM (5060 재구매율 1위 카테고리), 루테인(눈)
 - **간 건강**: 밀크씨슬 (실리마린 130mg/일 권장)
 - **항산화/에너지**: CoQ10 (지용성)
-- **한국 특화**: 홍삼이 단일 카테고리로 시장 30% 점유 (정관장 70% 단일 브랜드 점유) — 빠지면 안 됨
+- **한국 특화**: 홍삼이 단일 카테고리로 시장 30% 점유 (정관장 70% 단일 브랜드 점유) — 본 카탈로그에서는 작업지시자 결정으로 제외 (V1.1 검토)
 - **마그네슘 단독 vs 칼슘마그네슘 합제**: 시장에 둘 다 흔함. 사용자 인지는 단독 마그네슘이 더 직관적 → calciumMagnesium 분리 결정
 - **정제 색 컨벤션**: 흰색이 80%, 색 자체는 큰 의미 없음 (식약처) — 색은 시각 변별용으로 자유롭게 사용 가능
 
@@ -41,8 +41,9 @@ V1.1 후순위 (시장조사 후 제외):
 - biotin: vitaminD/multivitamin과 색 충돌 + 모발 건강은 collagen으로 어느 정도 커버
 - BCAA/단백질: 분말 형태가 다수 → 정제/캡슐 픽토그램과 안 맞음. V1.1 헬스 카테고리 별도
 - 후코이단/녹용: 시장 점유 낮음
+- **redGinseng (홍삼)**: 작업지시자 2026-04-28 결정으로 본 카탈로그 범위 밖 — V1.1 검토
 
-## 17종 카테고리 (V1.0 시드)
+## 16종 카테고리 (V1.0 시드)
 
 | # | key | 한글 | 형태 | 색 hex | 식별 핵심 |
 |---|---|---|---|---|---|
@@ -58,11 +59,10 @@ V1.1 후순위 (시장조사 후 제외):
 | 10 | `zinc` | 아연 | round disc (matte) | #B8A595 따뜻한 taupe | 라이트 그레이-베이지 |
 | 11 | `lutein` | 루테인 | oval softgel (semi-gloss) | #C9B068 골든 머스타드 | softgel + 약간 글로시 |
 | 12 | `collagen` | 콜라겐 | oval softgel (semi-gloss/translucent) | #E5C8B0 핑크 베이지 | softgel + 핑크 톤 |
-| 13 | `redGinseng` | 홍삼 | round disc (matte) | #7A3E2A 짙은 마호가니 | 진한 적갈색 |
-| 14 | `milkThistle` | 밀크씨슬 | 캡슐 (matte) | #7A6E3A 올리브 황녹 | 짙은 황녹 캡슐 |
-| 15 | `glucosamine` | 글루코사민 | 큰 oblong tablet (matte) | #E8DCB8 라이트 베이지 노랑 | 가운데 가로 score line + 큰 사이즈 |
-| 16 | `coq10` | 코엔자임 Q10 | oval softgel (글로시 translucent) | #E5704A 진한 코랄 | 글로시 + 진한 코랄 (omega3 amber와 색 변별) |
-| 17 | `other` | 기타 | round disc (matte) | #D9C9A8 베이지 | v4 tablet 재활용 (시드 외 폴백) |
+| 13 | `milkThistle` | 밀크씨슬 | 캡슐 (matte) | #7A6E3A 올리브 황녹 | 짙은 황녹 캡슐 |
+| 14 | `glucosamine` | 글루코사민 | 큰 oblong tablet (matte) | #E8DCB8 라이트 베이지 노랑 | 가운데 가로 score line + 큰 사이즈 |
+| 15 | `coq10` | 코엔자임 Q10 | oval softgel (글로시 translucent) | #E5704A 진한 코랄 | 글로시 + 진한 코랄 (omega3 amber와 색 변별) |
+| 16 | `other` | 기타 | round disc (matte) | #D9C9A8 베이지 | v4 tablet 재활용 (시드 외 폴백) |
 
 ## 시각 변별 시스템 (재정립)
 
@@ -70,14 +70,14 @@ V1.1 후순위 (시장조사 후 제외):
 
 ### 변별 축 1: 형태 (4 그룹)
 
-- **round disc**: vitaminD(작음), magnesium, iron, zinc, redGinseng, other
+- **round disc**: vitaminD(작음), magnesium, iron, zinc, other
 - **oval/oblong tablet**: vitaminC, vitaminB, multivitamin(큼), calcium(큼+두툼), glucosamine(큼)
 - **softgel**: omega3, lutein, collagen, coq10
 - **capsule**: probiotics, milkThistle
 
 ### 변별 축 2: 재질
 
-- **strict matte**: 모든 정제(tablet) 카테고리, 캡슐 카테고리(probiotics, milkThistle), redGinseng, magnesium, iron, zinc, calcium, glucosamine, multivitamin, vitaminC/B, vitaminD, other
+- **strict matte**: 모든 정제(tablet) 카테고리, 캡슐 카테고리(probiotics, milkThistle), magnesium, iron, zinc, calcium, glucosamine, multivitamin, vitaminC/B, vitaminD, other
 - **semi-gloss**: lutein, collagen (살짝 반투명, 매트보다 살짝 빛 반사)
 - **glossy translucent**: omega3, coq10 (어유/CoQ10 실물 정합)
 
@@ -86,7 +86,7 @@ V1.1 후순위 (시장조사 후 제외):
 - **노랑/오렌지/앰버**: omega3, vitaminC, vitaminD, lutein
 - **레드/핑크/코랄**: vitaminB, probiotics, collagen, coq10
 - **탠/베이지/크림**: multivitamin, calcium, glucosamine, other
-- **다크 갈색/녹색**: redGinseng, milkThistle
+- **올리브 황녹**: milkThistle (단독)
 - **그레이/메탈**: magnesium, iron, zinc
 
 ### 변별 축 4: 표면 detail
@@ -102,24 +102,24 @@ V1.1 후순위 (시장조사 후 제외):
 
 | 단계 | 담당 | 산출물 |
 |---|---|---|
-| 1. 시장조사 + 카테고리 17종 결정 | **Claude** | 본 계획서 §시장조사 + 17종 표 |
-| 2. 인프라 rename (`capsules/` → `categories/`) | **Claude** | `scripts/imageset-categories.sh`, `scripts/category-spec.json` (17 row), `scripts/README.md` |
+| 1. 시장조사 + 카테고리 16종 결정 | **Claude** | 본 계획서 §시장조사 + 16종 표 |
+| 2. 인프라 rename (`capsules/` → `categories/`) | **Claude** | `scripts/imageset-categories.sh`, `scripts/category-spec.json` (16 row), `scripts/README.md` |
 | 3. `other` 폴백 자산 재활용 | **Claude** | `design/categories/raw/other.png` ← `tablet.png` rename |
-| 4. GPT Image 2 17종 프롬프트 정제·박제 | **Claude** | 본 계획서 §프롬프트 시리즈 17개 |
+| 4. GPT Image 2 16종 프롬프트 정제·박제 | **Claude** | 본 계획서 §프롬프트 시리즈 17개 |
 | 5. GPT Image 2로 16종 PNG 생성 (other 제외) | **작업지시자** | `design/categories/raw/{key}.png` × 16 |
 | 6. `imageset-categories.sh` 일괄 실행 | **Claude** | `ios/PillPouch/Assets.xcassets/Categories/{key}.imageset/` × 17 |
-| 7. `category-seed.json` 17 row 박제 | **Claude** | `ios/PillPouch/Resources/category-seed.json` |
-| 8. 17종 시리즈 일관성 + 식별성 검증 | **작업지시자** | PR 본문 캡처 + 검증 코멘트 |
+| 7. `category-seed.json` 16 row 박제 | **Claude** | `ios/PillPouch/Resources/category-seed.json` |
+| 8. 16종 시리즈 일관성 + 식별성 검증 | **작업지시자** | PR 본문 캡처 + 검증 코멘트 |
 | 9. 빌드 검증 + 보고서 + PR ready 전환 | **Claude** | `xcodebuild build` ✅ + `docs/report/task_W2_17_report.md` |
 
-**현재 진행 상태**: omega3·vitaminC·vitaminD·vitaminB·multivitamin·other 6종 raw PNG 도착 → 17종 중 11종 도착 대기.
+**현재 진행 상태**: omega3·vitaminC·vitaminD·vitaminB·multivitamin·other 6종 raw PNG 도착 → 16종 중 11종 도착 대기.
 
 ## 폴더 구조
 
 ```
 design/
 └── categories/
-    └── raw/                                        # 17종 raw PNG (커밋)
+    └── raw/                                        # 16종 raw PNG (커밋)
         ├── omega3.png       ✅
         ├── vitaminC.png     ✅
         ├── vitaminD.png     ✅
@@ -132,20 +132,19 @@ design/
         ├── zinc.png         ⏳
         ├── lutein.png       ⏳
         ├── collagen.png     ⏳
-        ├── redGinseng.png   ⏳ (시장 30% 점유, 우선순위 ↑)
         ├── milkThistle.png  ⏳
         ├── glucosamine.png  ⏳
         ├── coq10.png        ⏳
         └── other.png        ✅ (v4 재활용)
 
 scripts/
-├── imageset-categories.sh                          # 17종 인자
-├── category-spec.json                              # 17 row
+├── imageset-categories.sh                          # 16종 인자
+├── category-spec.json                              # 16 row
 └── README.md
 
 ios/PillPouch/
-├── Assets.xcassets/Categories/                     # 17 imageset
-└── Resources/category-seed.json                    # 17 row metadata
+├── Assets.xcassets/Categories/                     # 16 imageset
+└── Resources/category-seed.json                    # 16 row metadata
 ```
 
 ## `category-seed.json` 형식
@@ -156,7 +155,7 @@ ios/PillPouch/
   "categories": [
     { "key": "omega3", "displayName": "오메가-3", "iconAssetName": "omega3", "iconRemoteURL": "...", "displayOrder": 1 },
     { "key": "vitaminC", "displayName": "비타민 C", "iconAssetName": "vitaminC", ..., "displayOrder": 2 },
-    ... (17 row total),
+    ... (16 row total),
     { "key": "other", "displayName": "기타", "iconAssetName": "other", ..., "displayOrder": 99 }
   ]
 }
@@ -168,21 +167,20 @@ ios/PillPouch/
 2. probiotics (구매율 1위 25.2%)
 3. vitaminC (구매율 2위 23.7%)
 4. multivitamin (구매율 3위 23.2%)
-5. redGinseng (한국 시장 30% 점유)
-6. vitaminD
-7. vitaminB
-8. milkThistle (간 건강)
-9. glucosamine (관절 5060)
-10. lutein (눈)
-11. collagen (뷰티)
-12. magnesium
-13. calcium
-14. iron
-15. zinc
-16. coq10
-17. other (99, 시드 외 폴백)
+5. vitaminD
+6. vitaminB
+7. milkThistle (간 건강)
+8. glucosamine (관절 5060)
+9. lutein (눈)
+10. collagen (뷰티)
+11. magnesium
+12. calcium
+13. iron
+14. zinc
+15. coq10
+16. other (99, 시드 외 폴백)
 
-## GPT Image 2 17종 프롬프트 시리즈
+## GPT Image 2 16종 프롬프트 시리즈
 
 ### 공통 잠금 블록 (모든 프롬프트 머리에 박기)
 
@@ -342,19 +340,7 @@ Subject: a single oval collagen softgel capsule — smooth elongated egg shape (
 Constraints (extra): NO tablet, NO round disc, NO sharp glossy reflections. Softgel surface should look softer and more matte than fish oil omega3.
 ```
 
-#### 13. redGinseng (홍삼) — 신규 ⭐ (시장 30% 점유)
-
-시장 정합: 한국 홍삼은 정관장이 70% 점유. 형태로는 정제(홍삼정 캡슐), 액상 스틱(홍삼톤), 분말 다양. 정제 cue가 가장 인지도 높음. 색은 짙은 적갈색/마호가니 (홍삼 농축액 색).
-
-```
-Material: STRICTLY matte, slightly woody/earthy texture (subtle, not exaggerated).
-
-Subject: a single round red ginseng concentrated pill tablet — flat short cylindrical disc with softly rounded edges, similar size to the reference tablet. The shape is a simple round disc. Solid VERY DEEP MAHOGANY/REDDISH-BROWN color (#7A3E2A), evoking concentrated red ginseng extract — distinctly Korean, warm yet deep. Surface is smooth and uniform with NO score line, NO logos, NO printed text. The color tone should evoke the dark red-brown of Korean red ginseng concentrate (홍삼정).
-
-Constraints (extra): NO oval, NO oblong, NO softgel, NO glossy. Color must be a distinctively deep mahogany-reddish-brown — NOT olive (milkThistle), NOT charcoal (iron), NOT golden (multivitamin).
-```
-
-#### 14. milkThistle (밀크씨슬) — 신규
+#### 13. milkThistle (밀크씨슬) — 신규
 
 시장 정합: 한국 밀크씨슬 영양제는 캡슐 형태가 다수 (가루 추출물을 캡슐에 담음). 색은 짙은 황녹/올리브 (실리마린 추출물 색).
 
@@ -363,10 +349,10 @@ Material: STRICTLY matte, non-glossy. Single uniform color across the whole caps
 
 Subject: a single capsule resembling a milk thistle supplement — a short cylindrical capsule shape with two perfectly rounded semicircular ends (the classic capsule silhouette), horizontal orientation, ~1.8:1 width-to-height ratio, similar size to the reference tablet. Single solid uniform color across both halves (NO color split, NO two-tone). Solid muted dark olive-yellow-green color (#7A6E3A), a deep olive/khaki tone evoking dried herbal extract. Surface is smooth — NO seam line visible, NO logos, NO printed text.
 
-Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color, NO seam visible. The color must be distinctly olive-green-brown — NOT pure brown (redGinseng), NOT pure pink (probiotics).
+Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color, NO seam visible. The color must be distinctly olive-green-brown — NOT pure pink (probiotics), NOT charcoal (iron).
 ```
 
-#### 15. glucosamine (글루코사민) — 신규
+#### 14. glucosamine (글루코사민) — 신규
 
 시장 정합: 한국 글루코사민 영양제는 대체로 큰 oblong tablet (관절 영양제는 큰 알약 cliché, 콘드로이친·MSM 합제도 흔함). 색은 흰색/연한 베이지가 흔함.
 
@@ -378,7 +364,7 @@ Subject: a single LARGE OBLONG glucosamine pill tablet — an elongated horizont
 Constraints (extra): NO round disc, NO softgel, NO glossy, NO speckles, NO vertical score (must be HORIZONTAL score along the long axis). The tablet must NOT be as thick/chunky as calcium.
 ```
 
-#### 16. coq10 (코엔자임 Q10) — 신규
+#### 15. coq10 (코엔자임 Q10) — 신규
 
 시장 정합: CoQ10는 지용성이라 거의 100% softgel. 색은 짙은 코랄/오렌지 레드 (CoQ10 결정 색). omega3와 변별 위해 색 톤 차이 강조 (omega3는 따뜻한 amber, coq10은 진한 코랄).
 
@@ -390,25 +376,25 @@ Subject: a single oval CoQ10 softgel capsule — smooth elongated egg shape (hor
 Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy translucent softgel like omega3). Color must be distinctly deep coral-red-orange — NOT golden amber (omega3 is more yellow-golden, coq10 must be more red-coral).
 ```
 
-#### 17. other (기타) — v4 tablet 재활용 ✅
+#### 16. other (기타) — v4 tablet 재활용 ✅
 
 `design/categories/raw/other.png`에 이미 #11에서 받은 v4 매트 베이지 정제. 추가 생성 불필요.
 
 ## 위험 요소
 
-1. **시리즈 일관성 — 17장 다양 형태/재질 사이 결속력** — 카메라 각도(25°)와 그림자 결로만 묶임. 재질이 매트/세미글로시/글로시 3 그룹으로 나뉘므로 시리즈 결속 약화 가능. **완화**: 작업지시자가 17장 그리드 캡처해 한 화면에서 점검, 어긋난 종만 재생성.
-2. **redGinseng vs iron 색 충돌** — 둘 다 어두운 톤. **완화**: redGinseng은 따뜻한 적갈색(#7A3E2A), iron은 차가운 다크 그레이-갈색(#5E4E45) — 채도/명도 모두 다름. 32pt에서 충분 변별.
+1. **시리즈 일관성 — 16장 다양 형태/재질 사이 결속력** — 카메라 각도(25°)와 그림자 결로만 묶임. 재질이 매트/세미글로시/글로시 3 그룹으로 나뉘므로 시리즈 결속 약화 가능. **완화**: 작업지시자가 16장 그리드 캡처해 한 화면에서 점검, 어긋난 종만 재생성.
+2. **milkThistle vs iron 색 충돌** — 둘 다 어두운 톤. **완화**: milkThistle은 올리브 황녹(#7A6E3A, 캡슐 형태), iron은 다크 그레이-갈색(#5E4E45, round disc) — 색조 + 형태 차이. 32pt에서 충분 변별.
 3. **omega3 vs coq10 글로시 softgel 색 충돌** — 둘 다 글로시 oval softgel + 따뜻한 톤. **완화**: omega3는 골든 amber(#E5B570, 노랑끼), coq10은 진한 코랄(#E5704A, 빨강끼) — 색조 차이 명확. 식별성 검증 단계에서 헷갈리면 coq10을 더 진한 색(#D55A38)으로 조정.
 4. **calcium vs glucosamine 색 충돌** — 둘 다 옅은 베이지/크림. **완화**: calcium 화이트크림(#E5DCCC), glucosamine 라이트 베이지 노랑(#E8DCB8) — 색 살짝 다름. 형태/사이즈/표면 차이로 보완 (calcium 두툼 매끈, glucosamine 일반 두께 + 가로 score).
 5. **probiotics vs collagen 핑크 충돌** — 둘 다 핑크 톤. **완화**: probiotics 작은 캡슐(파스텔 핑크 #E5B0B5), collagen 일반 oval softgel(핑크 베이지 #E5C8B0) — 형태/사이즈/재질 모두 다름.
 6. **multivitamin oval + 점박이가 32pt에서 점박이 안 보일 가능성** — 점박이가 1픽셀 이하로 떨어질 수 있음. **완화**: 점박이를 4-6%로 조정 (큰 점), 작업지시자가 32pt 미리 보기로 가시성 검증.
-7. **17종 GPT Image 2 호출 톤 일관성** — 17번 호출 사이 카메라 각도 미세 어긋남. **완화**: 모든 프롬프트에 reference 첨부 + "IDENTICAL camera angle" 강조.
-8. **Korean market의 새 카테고리 추가/축소 가능성** — 도그푸딩 후 `other` 비율이 30%+면 V1.1에 더 추가. 현재 17종은 V1.0 시드.
+7. **16종 GPT Image 2 호출 톤 일관성** — 17번 호출 사이 카메라 각도 미세 어긋남. **완화**: 모든 프롬프트에 reference 첨부 + "IDENTICAL camera angle" 강조.
+8. **Korean market의 새 카테고리 추가/축소 가능성** — 도그푸딩 후 `other` 비율이 30%+면 V1.1에 더 추가. 현재 16종은 V1.0 시드.
 
 ## 검증 (Issue #17 마감 조건)
 
 - [ ] 17 `*.imageset/` 등록
-- [ ] `category-seed.json` 17 row 박제, JSON valid
+- [ ] `category-seed.json` 16 row 박제, JSON valid
 - [ ] `xcodebuild build` ✅
 - [ ] 17장 raw PNG 시리즈 일관성 작업지시자 검증 통과
 - [ ] 32pt 식별성 단독 검증 통과
@@ -420,11 +406,11 @@ Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy transluc
 - ✅ 사용자 인지 단위(성분)에 정합한 시각 표현
 - ✅ Non-goals 위반 없음
 - ✅ `IntakeLog` 비가역 행동 기록 모델 변경 없음
-- ✅ 한국 시장 1차 사용자가 첫 등록 시 시드 17종으로 90%+ 커버 추정 (V1.0 도그푸딩에서 검증)
+- ✅ 한국 시장 1차 사용자가 첫 등록 시 시드 16종으로 90%+ 커버 추정 (V1.0 도그푸딩에서 검증)
 
 ## 다음 (이 task 완료 후)
 
-- #18 (백엔드): 17 row를 SQLite `category` 시드 마이그레이션 + Fly static 17 PNG 업로드
-- #19 (모바일 동기화/UI): `category-seed.json` import + 검색 UI에 17종 정렬 표시
-- #14 (Today 정적 레이아웃): 봉지 띠에 17종 카테고리 이미지 일부 표시
+- #18 (백엔드): 16 row를 SQLite `category` 시드 마이그레이션 + Fly static 17 PNG 업로드
+- #19 (모바일 동기화/UI): `category-seed.json` import + 검색 UI에 16종 정렬 표시
+- #14 (Today 정적 레이아웃): 봉지 띠에 16종 카테고리 이미지 일부 표시
 - V1.1 후순위: biotin·BCAA·단백질·후코이단 등 카테고리 추가 검토 (도그푸딩 결과 기반)

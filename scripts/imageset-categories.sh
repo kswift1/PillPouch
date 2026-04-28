@@ -8,8 +8,8 @@
 # 의존: imagemagick (brew install imagemagick), python3
 # 참조: docs/plans/task_W2_17_impl.md, docs/adr/0007-server-catalog-as-source-of-truth.md
 #
-# 17종 (시장조사 후 12 → 17 확장, 2026-04-28):
-#   omega3 probiotics vitaminC multivitamin redGinseng vitaminD vitaminB
+# 16종 (시장조사 후 12 → 17 → 16, 홍삼 제거 2026-04-28 작업지시자 결정):
+#   omega3 probiotics vitaminC multivitamin vitaminD vitaminB
 #   milkThistle glucosamine lutein collagen magnesium calcium iron zinc coq10 other
 
 set -euo pipefail
@@ -30,7 +30,7 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 if [[ $# -eq 0 ]]; then
-  set -- omega3 probiotics vitaminC multivitamin redGinseng vitaminD vitaminB \
+  set -- omega3 probiotics vitaminC multivitamin vitaminD vitaminB \
          milkThistle glucosamine lutein collagen magnesium calcium iron zinc coq10 other
 fi
 

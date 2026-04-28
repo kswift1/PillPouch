@@ -26,15 +26,15 @@ command -v magick >/dev/null 2>&1 || {
 
 mkdir -p "$OUT_DIR"
 
-# 17종 (시장조사 후 displayOrder 기반 순서)
-# Row 1: omega3 probiotics vitaminC multivitamin redGinseng
-# Row 2: vitaminD vitaminB milkThistle glucosamine lutein
-# Row 3: collagen magnesium calcium iron zinc
-# Row 4: coq10 other (3 빈자리)
-ALL=(omega3 probiotics vitaminC multivitamin redGinseng \
-     vitaminD vitaminB milkThistle glucosamine lutein \
-     collagen magnesium calcium iron zinc \
-     coq10 other)
+# 16종 (홍삼 제거 후, displayOrder 기반 순서)
+# Row 1: omega3 probiotics vitaminC multivitamin vitaminD
+# Row 2: vitaminB milkThistle glucosamine lutein collagen
+# Row 3: magnesium calcium iron zinc coq10
+# Row 4: other (4 빈자리)
+ALL=(omega3 probiotics vitaminC multivitamin vitaminD \
+     vitaminB milkThistle glucosamine lutein collagen \
+     magnesium calcium iron zinc coq10 \
+     other)
 
 # ── 사이즈별 그리드 (32, 64, 96, 128 pt — @2x 가정해 64/128/192/256 px)
 for SIZE in 32 64 96 128; do
@@ -56,8 +56,8 @@ for SIZE in 32 64 96 128; do
     list+=("$TMP/${name}-${SIZE}.png")
   done
 
-  # 빈 슬롯 3개 padding (4행 × 5열 = 20 - 17 = 3)
-  for i in 1 2 3; do
+  # 빈 슬롯 4개 padding (4행 × 5열 = 20 - 16 = 4)
+  for i in 1 2 3 4; do
     magick -size "${px}x${px}" xc:"#FAF7F2" +set label "$TMP/blank-${SIZE}-${i}.png"
     list+=("$TMP/blank-${SIZE}-${i}.png")
   done
@@ -80,7 +80,7 @@ COLOR_ORDER=(
   omega3 vitaminC vitaminD lutein               # yellow_orange (4)
   vitaminB probiotics collagen coq10            # red_pink (4)
   multivitamin calcium glucosamine other        # beige_tan (4)
-  redGinseng milkThistle "" ""                  # dark_brown_olive (2 + 2 빈)
+  milkThistle "" "" ""                          # olive (1 단독 + 3 빈) — redGinseng 제거로 dark 그룹 단독
   magnesium iron zinc ""                        # grey_metal (3 + 1 빈)
 )
 
@@ -124,6 +124,6 @@ echo "  2. grid-by-color.png — 색 그룹 내 카테고리들 변별 점검 (4
 echo "     Row 1: yellow/orange (omega3, vitaminC, vitaminD, lutein)" >&2
 echo "     Row 2: red/pink (vitaminB, probiotics, collagen, coq10)" >&2
 echo "     Row 3: beige/tan (multivitamin, calcium, glucosamine, other)" >&2
-echo "     Row 4: dark brown/olive (redGinseng, milkThistle, blank, blank)" >&2
+echo "     Row 4: olive (milkThistle, blank, blank, blank)" >&2
 echo "     Row 5: grey/metal (magnesium, iron, zinc, blank)" >&2
 echo "  3. grid-128pt.png — 큰 사이즈에서 시리즈 일관성 점검 (카메라/shadow)" >&2

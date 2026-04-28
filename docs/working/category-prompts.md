@@ -18,18 +18,19 @@
 | 10 | zinc | ⏳ 신규 | round disc, 라이트 taupe |
 | 11 | lutein | ⏳ 신규 | oval softgel 세미글로시, 골든 머스타드 |
 | 12 | collagen | ⏳ 신규 | oval softgel 세미글로시, 핑크 베이지 |
-| 13 | redGinseng | ⏳ 신규 ⭐ | round disc, 짙은 마호가니 (한국 시장 30%) |
-| 14 | milkThistle | ⏳ 신규 | 캡슐, 올리브 황녹 |
-| 15 | glucosamine | ⏳ 신규 | 큰 oblong, 라이트 베이지 + 가로 score |
-| 16 | coq10 | ⏳ 신규 | 글로시 oval softgel, 진한 코랄 |
-| 17 | other | ✅ 완료 | v4 tablet 재활용 |
+| 13 | milkThistle | ⏳ 신규 | 캡슐, 올리브 황녹 |
+| 14 | glucosamine | ⏳ 신규 | 큰 oblong, 라이트 베이지 + 가로 score |
+| 15 | coq10 | ⏳ 신규 | 글로시 oval softgel, 진한 코랄 |
+| 16 | other | ✅ 완료 | v4 tablet 재활용 |
 
-**남은 작업**: 11장 (calcium, magnesium, probiotics, iron, zinc, lutein, collagen, redGinseng, milkThistle, glucosamine, coq10)
+~~redGinseng (홍삼)~~ — 작업지시자 2026-04-28 결정으로 제거. 본 카탈로그 범위 밖.
+
+**남은 작업**: 10장 (calcium, magnesium, probiotics, iron, zinc, lutein, collagen, milkThistle, glucosamine, coq10)
 
 ## 공통 잠금 블록 (모든 프롬프트 머리에 박기)
 
 ```
-Match EXACTLY the visual style, material, lighting, shading, camera angle, and shadow style of the attached reference image (a beige tablet pill). The new image must look like a sibling in the same 17-icon series — same upper-left soft lighting, same simple ellipse drop shadow directly below the subject, same gentle stylization, same composition. Camera at about 25° elevation (looking down at a slight angle), same as the reference.
+Match EXACTLY the visual style, material, lighting, shading, camera angle, and shadow style of the attached reference image (a beige tablet pill). The new image must look like a sibling in the same 16-icon series — same upper-left soft lighting, same simple ellipse drop shadow directly below the subject, same gentle stylization, same composition. Camera at about 25° elevation (looking down at a slight angle), same as the reference.
 
 DO NOT copy the COLOR or SHAPE of the reference. Copy the matte material baseline, camera angle, shadow style, and overall composition only.
 
@@ -43,14 +44,14 @@ Shadow: a single soft ellipse drop shadow directly below the subject, low opacit
 
 Constraints: NO text, NO watermark, NO logos, NO printed marks, NO embossed letters, NO faces, NO characters, NO multiple objects, NO medical iconography (no cross, no Rx, no caduceus), NO photographic realism.
 
-Use case: pictogram for an adult vitamin tracking app, displayed at 32–96 px. This is one of a 17-icon series — visual consistency with the attached reference is critical.
+Use case: pictogram for an adult vitamin tracking app, displayed at 32–96 px. This is one of a 16-icon series — visual consistency with the attached reference is critical.
 
 Output: square 1024×1024.
 ```
 
 ---
 
-## 11장 Subject 블록
+## 10장 Subject 블록
 
 각 프롬프트는 위 공통 잠금 블록 + 아래 Subject 블록을 합쳐서 ChatGPT에 입력.
 
@@ -168,23 +169,7 @@ Constraints (extra): NO tablet, NO round disc, NO sharp glossy reflections. Soft
 
 ---
 
-### #13 redGinseng (홍삼) — round disc, 짙은 마호가니 ⭐ (시장 30%)
-
-**저장**: `design/categories/raw/redGinseng.png`
-
-```
-Material: STRICTLY matte, slightly woody/earthy texture (subtle, not exaggerated).
-
-Subject: a single round red ginseng concentrated pill tablet — flat short cylindrical disc with softly rounded edges, similar size to the reference tablet. The shape is a simple round disc. Solid VERY DEEP MAHOGANY/REDDISH-BROWN color (#7A3E2A), evoking concentrated red ginseng extract — distinctly Korean, warm yet deep. Surface is smooth and uniform with NO score line, NO logos, NO printed text. The color tone should evoke the dark red-brown of Korean red ginseng concentrate (홍삼정).
-
-Constraints (extra): NO oval, NO oblong, NO softgel, NO glossy. Color must be a distinctively deep mahogany-reddish-brown — NOT olive (milkThistle), NOT charcoal (iron), NOT golden (multivitamin).
-```
-
-**평가 체크**: 짙은 적갈색 (홍삼 농축액 색감) / iron 차가운 다크그레이와 명확히 다른 따뜻한 적갈색
-
----
-
-### #14 milkThistle (밀크씨슬) — 캡슐, 올리브 황녹
+### #13 milkThistle (밀크씨슬) — 캡슐, 올리브 황녹
 
 **저장**: `design/categories/raw/milkThistle.png`
 
@@ -196,11 +181,11 @@ Subject: a single capsule resembling a milk thistle supplement — a short cylin
 Constraints (extra): NO round disc tablet, NO softgel (translucent gelatin), NO oblong tablet (must be capsule), NO glossy, NO two-tone color, NO seam visible. The color must be distinctly olive-green-brown — NOT pure brown (redGinseng), NOT pure pink (probiotics).
 ```
 
-**평가 체크**: 캡슐 형태 + 올리브 황녹 (redGinseng 적갈색과 명확히 다른 녹 끼)
+**평가 체크**: 캡슐 형태 + 올리브 황녹 (iron 다크그레이와 명확히 다른 녹 끼)
 
 ---
 
-### #15 glucosamine (글루코사민) — 큰 oblong, 라이트 베이지 노랑 + 가로 score
+### #14 glucosamine (글루코사민) — 큰 oblong, 라이트 베이지 노랑 + 가로 score
 
 **저장**: `design/categories/raw/glucosamine.png`
 
@@ -216,7 +201,7 @@ Constraints (extra): NO round disc, NO softgel, NO glossy, NO speckles, NO verti
 
 ---
 
-### #16 coq10 (코엔자임 Q10) — 글로시 oval softgel, 진한 코랄
+### #15 coq10 (코엔자임 Q10) — 글로시 oval softgel, 진한 코랄
 
 **저장**: `design/categories/raw/coq10.png`
 
@@ -236,17 +221,16 @@ Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy transluc
 
 시장 우선순위 + 변별 안전성 기준:
 
-1. **redGinseng** ⭐ (시장 30%, 가장 distinctive 색)
-2. **probiotics** (구매율 1위, 캡슐 형태 첫 시도)
-3. **calcium** (가장 큰 사이즈, 다른 oval과 비교 baseline)
-4. **glucosamine** (가로 score 첫 시도)
-5. **coq10** (omega3와 변별 검증 — 색 톤 차이)
-6. **lutein** (omega3와 변별 검증 — 재질 차이)
-7. **collagen** (probiotics와 변별 검증 — 핑크 톤)
-8. **iron** (다크 톤 baseline)
-9. **milkThistle** (iron과 변별 — 갈색 vs 녹)
-10. **magnesium** (그레이 톤 분리 — iron 다크와 거리)
-11. **zinc** (그레이 그룹 마지막, 다른 두 그레이와 비교)
+1. **probiotics** (구매율 1위, 캡슐 형태 첫 시도)
+2. **calcium** (가장 큰 사이즈, 다른 oval과 비교 baseline)
+3. **glucosamine** (가로 score 첫 시도)
+4. **coq10** (omega3와 변별 검증 — 색 톤 차이)
+5. **lutein** (omega3와 변별 검증 — 재질 차이)
+6. **collagen** (probiotics와 변별 검증 — 핑크 톤)
+7. **iron** (다크 톤 baseline)
+8. **milkThistle** (iron과 변별 — 갈색 vs 녹)
+9. **magnesium** (그레이 톤 분리 — iron 다크와 거리)
+10. **zinc** (그레이 그룹 마지막, 다른 두 그레이와 비교)
 
 ## 각 카테고리당 4~8장 권장
 
@@ -254,9 +238,9 @@ Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy transluc
 - 재질/색/형태 다양한 시도 비교
 - best 1장 골라 raw로 저장
 
-## 식별성 검증 (전체 17장 도착 후)
+## 식별성 검증 (전체 16장 도착 후)
 
-작업지시자가 17장 그리드 캡처 (예: ChatGPT에 17장 동시 업로드해 비교 또는 Finder Quick Look 그리드).
+작업지시자가 16장 그리드 캡처 (예: ChatGPT에 16장 동시 업로드해 비교 또는 Finder Quick Look 그리드 — `./scripts/preview-categories.sh` 자동 생성도 가능).
 
 검증 항목:
 - [ ] 매트/세미글로시/글로시 3 재질 그룹이 시리즈로 묶이는 톤
@@ -269,8 +253,8 @@ Constraints (extra): NO tablet, NO round disc, NO matte (must be glossy transluc
 
 ## 운동 후 작업지시자가 바로 할 수 있는 흐름
 
-1. ChatGPT에 위 11개 프롬프트 차례로 (각 4~8장)
+1. ChatGPT에 위 10개 프롬프트 차례로 (각 4~8장)
 2. best 1장 골라 `design/categories/raw/{key}.png`로 저장
-3. 11장 모두 도착하면 알려주기
-4. Claude가 `./scripts/imageset-categories.sh` 일괄 실행 → 17 imageset 자동 생성
+3. 10장 모두 도착하면 알려주기
+4. Claude가 `./scripts/imageset-categories.sh` 일괄 실행 → 16 imageset 자동 생성
 5. 빌드/Preview 검증 → PR ready 전환 → squash merge
