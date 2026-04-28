@@ -5,28 +5,6 @@
 
 import Foundation
 
-/// 봉지 안 캡슐의 시각적 형태 — 기획서 §캡슐 일러스트 6종.
-/// 봉지 SVG 렌더링과 영양제 등록 화면 Picker에서 사용.
-enum CapsuleType: String, Codable, CaseIterable {
-    /// 정제. 단단한 압축 형태.
-    case tablet
-
-    /// 소프트젤. 액상이 부드러운 캡슐 안에 든 형태.
-    case softgel
-
-    /// 일반 캡슐. 가루/분말이 든 단단한 캡슐.
-    case capsule
-
-    /// 가루 (스틱팩 등).
-    case powder
-
-    /// 액상 (드롭).
-    case liquid
-
-    /// 구미. 젤리 형태.
-    case gummy
-}
-
 /// 하루 3슬롯 — 기획서 §화면 구조 §데이터 모델 스케치.
 /// `UserSettings`의 시각과 1:1 매핑되며 Today 화면의 봉지 띠 순서를 결정.
 enum TimeSlot: String, Codable, CaseIterable {
