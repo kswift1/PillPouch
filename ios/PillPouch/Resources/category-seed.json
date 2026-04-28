@@ -1,5 +1,5 @@
 {
-  "_comment": "ADR-0007 12종 카테고리 시드. 첫 실행 시 #19에서 CategoryMirror로 import. 이후 백그라운드 동기화로 서버 카탈로그 응답 upsert. iconRemoteURL은 V1.0 placeholder — #18 백엔드 hosting 확정 시 갱신.",
+  "_comment": "ADR-0007 + 시장조사 (2026-04-28) 17종 카테고리 시드. 첫 실행 시 #19에서 CategoryMirror로 import. 이후 백그라운드 동기화로 서버 카탈로그 응답 upsert. iconRemoteURL은 V1.0 placeholder — #18 백엔드 hosting 확정 시 갱신.",
   "version": 1,
   "categories": [
     {
@@ -10,59 +10,59 @@
       "displayOrder": 1
     },
     {
+      "key": "probiotics",
+      "displayName": "유산균",
+      "iconAssetName": "probiotics",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/probiotics.png",
+      "displayOrder": 2
+    },
+    {
       "key": "vitaminC",
       "displayName": "비타민 C",
       "iconAssetName": "vitaminC",
       "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/vitaminC.png",
-      "displayOrder": 2
-    },
-    {
-      "key": "vitaminD",
-      "displayName": "비타민 D",
-      "iconAssetName": "vitaminD",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/vitaminD.png",
       "displayOrder": 3
-    },
-    {
-      "key": "vitaminB",
-      "displayName": "비타민 B",
-      "iconAssetName": "vitaminB",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/vitaminB.png",
-      "displayOrder": 4
     },
     {
       "key": "multivitamin",
       "displayName": "종합 비타민",
       "iconAssetName": "multivitamin",
       "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/multivitamin.png",
+      "displayOrder": 4
+    },
+    {
+      "key": "redGinseng",
+      "displayName": "홍삼",
+      "iconAssetName": "redGinseng",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/redGinseng.png",
       "displayOrder": 5
     },
     {
-      "key": "calciumMagnesium",
-      "displayName": "칼슘 마그네슘",
-      "iconAssetName": "calciumMagnesium",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/calciumMagnesium.png",
+      "key": "vitaminD",
+      "displayName": "비타민 D",
+      "iconAssetName": "vitaminD",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/vitaminD.png",
       "displayOrder": 6
     },
     {
-      "key": "probiotics",
-      "displayName": "유산균",
-      "iconAssetName": "probiotics",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/probiotics.png",
+      "key": "vitaminB",
+      "displayName": "비타민 B",
+      "iconAssetName": "vitaminB",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/vitaminB.png",
       "displayOrder": 7
     },
     {
-      "key": "iron",
-      "displayName": "철분",
-      "iconAssetName": "iron",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/iron.png",
+      "key": "milkThistle",
+      "displayName": "밀크씨슬",
+      "iconAssetName": "milkThistle",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/milkThistle.png",
       "displayOrder": 8
     },
     {
-      "key": "zinc",
-      "displayName": "아연",
-      "iconAssetName": "zinc",
-      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/zinc.png",
+      "key": "glucosamine",
+      "displayName": "글루코사민",
+      "iconAssetName": "glucosamine",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/glucosamine.png",
       "displayOrder": 9
     },
     {
@@ -78,6 +78,41 @@
       "iconAssetName": "collagen",
       "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/collagen.png",
       "displayOrder": 11
+    },
+    {
+      "key": "magnesium",
+      "displayName": "마그네슘",
+      "iconAssetName": "magnesium",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/magnesium.png",
+      "displayOrder": 12
+    },
+    {
+      "key": "calcium",
+      "displayName": "칼슘",
+      "iconAssetName": "calcium",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/calcium.png",
+      "displayOrder": 13
+    },
+    {
+      "key": "iron",
+      "displayName": "철분",
+      "iconAssetName": "iron",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/iron.png",
+      "displayOrder": 14
+    },
+    {
+      "key": "zinc",
+      "displayName": "아연",
+      "iconAssetName": "zinc",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/zinc.png",
+      "displayOrder": 15
+    },
+    {
+      "key": "coq10",
+      "displayName": "코엔자임 Q10",
+      "iconAssetName": "coq10",
+      "iconRemoteURL": "https://api.pillpouch.app/assets/category-icons/coq10.png",
+      "displayOrder": 16
     },
     {
       "key": "other",
