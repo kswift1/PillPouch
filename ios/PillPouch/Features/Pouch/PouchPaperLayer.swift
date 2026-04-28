@@ -6,34 +6,38 @@
 import SwiftUI
 
 /// 플라스틱 약봉지 합성. 참조: `.context/attachments/image.png` (실제 한국 약국 봉지).
-/// 본체 + 플라스틱 sheen + 상하단 굵은 serrated heat-seal + 옆구리 V노치 + 헤더(슬롯 도장 + 약국 정보).
+/// 본체 + 플라스틱 sheen + 상하단 굵은 serrated heat-seal + 헤더(슬롯 도장 + 약국 정보) + 중간 perforation (좌/우 반원 노치 + 점선).
+/// Perforation은 봉지 shape 자체에 좌/우 반원을 빼서 진짜 절취선 효과. 봉지 찢기 인터랙션 시작 라인 (ADR-0009).
 /// 알약은 PouchView가 ZStack 아래에 깔아 봉지 너머로 비치게 함.
 struct PouchPaperLayer: View {
     let slot: TimeSlot
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        ZStack {
-            pouchBody()
-            plasticSheen()
-            topHeatSeal()
-            bottomHeatSeal()
-            sideTearNotches()
-            headerArea()
+        GeometryReader { geo in
+            let shape = NotchedPouchShape(
+                cornerRadius: Const.cornerRadius,
+                notchRadius: Const.notchRadius,
+                notchY: perforationY(width: geo.size.width, height: geo.size.height)
+            )
+            ZStack {
+                shape
+                    .fill(bodyFill)
+                    .overlay(shape.stroke(bodyOutline, lineWidth: 0.5))
+                    .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
+                ZStack {
+                    plasticSheen()
+                    topHeatSeal()
+                    bottomHeatSeal()
+                    headerArea()
+                }
+                .mask(shape)
+                perforationDashLine()
+            }
         }
     }
 
     // MARK: - 본체
-
-    private func pouchBody() -> some View {
-        RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous)
-            .fill(bodyFill)
-            .overlay(
-                RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous)
-                    .strokeBorder(bodyOutline, lineWidth: 0.5)
-            )
-            .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
-    }
 
     private func plasticSheen() -> some View {
         LinearGradient(
@@ -106,30 +110,26 @@ struct PouchPaperLayer: View {
         }
     }
 
-    // MARK: - 옆구리 V노치 (찢기 시작점)
+    // MARK: - 중간 Perforation (절취선) — ADR-0009
 
-    private func sideTearNotches() -> some View {
+    /// Perforation 점선 — 좌측 노치 안쪽 끝부터 우측 노치 안쪽 끝까지 horizontal dash.
+    private func perforationDashLine() -> some View {
         GeometryReader { geo in
-            let y = Const.topSealHeight + Const.serrationAmplitude + Const.notchYOffset
-            ZStack {
-                notchPath(at: CGPoint(x: 0, y: y), facingRight: true)
-                    .stroke(notchColor, lineWidth: 0.7)
-                notchPath(at: CGPoint(x: geo.size.width, y: y), facingRight: false)
-                    .stroke(notchColor, lineWidth: 0.7)
+            let y = perforationY(width: geo.size.width, height: geo.size.height)
+            let inset = Const.notchRadius + PPSpacing.xs
+            Path { path in
+                path.move(to: CGPoint(x: inset, y: y))
+                path.addLine(to: CGPoint(x: geo.size.width - inset, y: y))
             }
+            .stroke(perforationColor,
+                    style: StrokeStyle(lineWidth: 0.7, dash: [3, 3]))
         }
         .allowsHitTesting(false)
     }
 
-    private func notchPath(at origin: CGPoint, facingRight: Bool) -> Path {
-        Path { path in
-            let w: CGFloat = Const.notchWidth
-            let h: CGFloat = Const.notchHeight
-            let xSign: CGFloat = facingRight ? 1 : -1
-            path.move(to: CGPoint(x: origin.x, y: origin.y - h / 2))
-            path.addLine(to: CGPoint(x: origin.x + xSign * w, y: origin.y))
-            path.addLine(to: CGPoint(x: origin.x, y: origin.y + h / 2))
-        }
+    /// Perforation의 y 좌표 — top heat-seal + 헤더 영역 직후, 봉지 위쪽 1/3 지점 부근.
+    private func perforationY(width: CGFloat, height: CGFloat) -> CGFloat {
+        Const.topSealHeight + Const.headerCenterOffset + Const.headerDividerOffset
     }
 
     // MARK: - 헤더 (도장 + 약국 정보)
@@ -156,16 +156,6 @@ struct PouchPaperLayer: View {
             .position(
                 x: geo.size.width / 2,
                 y: Const.topSealHeight + Const.headerCenterOffset
-            )
-            .overlay(
-                Rectangle()
-                    .fill(headerSecondaryColor.opacity(0.30))
-                    .frame(height: 0.5)
-                    .padding(.horizontal, PPSpacing.md)
-                    .position(
-                        x: geo.size.width / 2,
-                        y: Const.topSealHeight + Const.headerCenterOffset + Const.headerDividerOffset
-                    )
             )
         }
         .allowsHitTesting(false)
@@ -200,11 +190,7 @@ struct PouchPaperLayer: View {
             : Color(red: 0.72, green: 0.68, blue: 0.60).opacity(0.65)
     }
 
-    private var notchColor: Color {
-        scheme == .dark
-            ? Color(red: 0.85, green: 0.82, blue: 0.78).opacity(0.30)
-            : Color(red: 0.36, green: 0.34, blue: 0.31).opacity(0.30)
-    }
+    private var perforationColor: Color { PPColor.textSecondary.opacity(0.40) }
 
     private var headerPrimaryColor: Color { PPColor.textPrimary.opacity(0.55) }
     private var headerSecondaryColor: Color { PPColor.textSecondary.opacity(0.55) }
@@ -217,11 +203,36 @@ struct PouchPaperLayer: View {
         static let bottomSealHeight: CGFloat = 12
         static let serrationAmplitude: CGFloat = 3
         static let serrationPeriod: CGFloat = 6
-        static let notchWidth: CGFloat = 6
-        static let notchHeight: CGFloat = 8
-        static let notchYOffset: CGFloat = 4
         static let headerCenterOffset: CGFloat = 38
+        /// Perforation y 좌표 = top seal + headerCenterOffset + headerDividerOffset.
         static let headerDividerOffset: CGFloat = 36
+        /// 좌/우 반원 노치 반지름. 240pt 봉지 너비 대비 ~3.3% (8pt diameter).
+        static let notchRadius: CGFloat = 4
+    }
+}
+
+/// 봉지 outline + 좌/우 perforation 반원 노치를 뺀 shape.
+/// fill / mask / stroke 모두에 사용 — 본체와 노치를 단일 source로.
+struct NotchedPouchShape: Shape {
+    let cornerRadius: CGFloat
+    let notchRadius: CGFloat
+    let notchY: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let outline = Path(roundedRect: rect, cornerRadius: cornerRadius)
+        let leftNotch = Path(ellipseIn: CGRect(
+            x: rect.minX - notchRadius,
+            y: notchY - notchRadius,
+            width: notchRadius * 2,
+            height: notchRadius * 2
+        ))
+        let rightNotch = Path(ellipseIn: CGRect(
+            x: rect.maxX - notchRadius,
+            y: notchY - notchRadius,
+            width: notchRadius * 2,
+            height: notchRadius * 2
+        ))
+        return outline.subtracting(leftNotch).subtracting(rightNotch)
     }
 }
 

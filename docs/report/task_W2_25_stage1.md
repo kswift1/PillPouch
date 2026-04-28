@@ -223,3 +223,92 @@ docs: append redesign 1차 section to Stage 1 report
 ## 승인 ⛔ (재)
 
 작업지시자 검토 후 Stage 2 진입.
+
+---
+
+# 추가: Redesign 2차 (옆 V노치 → 중간 perforation)
+
+## 트리거
+
+작업지시자 1차 redesign 검토 결과:
+1. 옆구리 V노치(`> <`)가 "꺽쇠/화살표"로 읽힘 — 의도(찢기 시작점) 전달 실패
+2. 헤더 정보와 알약 사이 dotted divider가 단순 정보 구분으로 낭비
+3. **제안**: middle divider를 진짜 perforation으로 강화 → swipe gesture target으로 활용 → 가설 B 강화
+
+## ADR-0009 신규 작성
+
+`docs/adr/0009-tear-gesture-middle-perforation.md` — 찢기 인터랙션 위치를 봉지 상단(top edge)에서 중간 perforation 라인으로 이동.
+
+핵심:
+- 시각/인터랙션/알약 흐름이 한 라인에 정렬 → 학습 비용 최소화
+- perforation = 좌/우 반원 노치 + 점선 (즉각 "여기 뜯음" 인지)
+- 알약은 perforation 아래에 위치 → 찢기 시 자연 낙하 (Stage 5에서 구현)
+- 옆 V노치 시각 혼란 자연 해결
+
+브리프 §핵심 인터랙션 명세 갱신 (v0.5 변경 로그) — drag → swipe, top → middle perforation.
+
+## 코드 변경
+
+### 신규
+- `NotchedPouchShape: Shape` — 봉지 outline 에서 좌/우 perforation 반원을 빼는 단일 source. fill/mask/stroke 모두에 사용. `Path.subtracting()` 활용.
+- `perforationDashLine()` — 좌측 노치 안쪽 끝 ~ 우측 노치 안쪽 끝까지 horizontal dash `[3, 3]`.
+- `perforationY(width:height:)` — top heat-seal + 헤더 영역 직후 위치 계산.
+
+### 삭제
+- `sideTearNotches()` 함수 + `notchPath()` helper — 옆구리 V노치 stroke 그리기
+- `notchColor` 속성, `notchWidth/notchHeight/notchYOffset` Const
+- `headerArea()` 의 dotted divider overlay (perforation으로 대체)
+
+### 수정
+- `body` — `GeometryReader` 로 감싸서 `NotchedPouchShape` 인스턴스 1개 만들고 fill (본체) + mask (decorations) 양쪽에 재사용
+- `pouchBody()` 함수 제거 — `NotchedPouchShape.fill().shadow()` 로 인라인
+- 모든 decoration layer (sheen/heatSeal/header) `.mask(shape)` — 노치 영역 자동 비움
+
+## 시각 사양 (확정)
+
+| 항목 | 값 |
+|---|---|
+| 노치 모양 | 반원 ⌒ (Circle subtract) |
+| 노치 반지름 | 4pt → diameter 8pt (봉지 너비 240pt 대비 ~3.3%) |
+| 노치 위치 | 좌/우 가장자리, perforation y 라인 |
+| Perforation y | top heat-seal(14) + headerCenterOffset(38) + headerDividerOffset(36) = 88pt from top |
+| 점선 dash | `[3, 3]` |
+| 점선 lineWidth | 0.7pt |
+| 점선 color | `PPColor.textSecondary opacity 0.40` |
+| 점선 inset | 노치 반지름 + PPSpacing.xs (8pt) |
+
+## 검증
+
+빌드: `** BUILD SUCCEEDED **` 통과.
+
+스크린샷 6장 (3 slots × 2 modes) 갱신:
+- `sealed-morning-{light,dark}.png`
+- `sealed-lunch-{light,dark}.png`
+- `sealed-evening-{light,dark}.png`
+
+이전 redesign 1차 스크린샷은 같은 파일명에 덮어써짐. 1차 시각이 필요하면 git history에서 확인.
+
+### 시각 평가 (1차 vs 2차)
+
+| 항목 | 1차 (옆 V노치) | 2차 (중간 perforation) | 평가 |
+|---|---|---|---|
+| 옆구리 `> <` 의문 | 시각 혼란 | **제거됨** | ✅ |
+| 찢기 시작점 시그널 | 약함 (그려진 stroke) | **강함 (봉지 형태 자체 깎임)** | ✅ |
+| 헤더 ↔ 알약 구분 | 단순 dotted line | **기능적 perforation 라인** | ✅ |
+| 가설 B 강화 | 보통 | **강화 — swipe target 자명** | ✅ |
+| 시각/인터랙션/알약 정렬 | 미흡 | **한 라인에 정렬** | ✅ |
+| Stage 4/5 구현 용이 | 보통 | **직선 swipe + 자연 낙하** | ✅ |
+
+## 추가 커밋
+
+```
+docs(adr): add ADR-0009 tear gesture middle perforation
+docs: update brief.md tear interaction spec (top → middle perforation)
+feat(ios): replace side V-notches with middle perforation (notched shape + dotted line)
+docs: update redesign 2차 screenshots (3 slots × 2 modes)
+docs: append redesign 2차 section to Stage 1 report
+```
+
+## 승인 ⛔ (3차)
+
+작업지시자 검토 후 **Stage 2 (알약 시각 + 정적 배치)** 진입.
