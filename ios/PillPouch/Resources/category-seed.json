@@ -1,0 +1,14 @@
+[
+  { "key": "omega3",           "displayName": "오메가-3",            "iconAssetName": "omega3",           "displayOrder": 1,  "version": 1 },
+  { "key": "vitaminC",         "displayName": "비타민 C",            "iconAssetName": "vitaminC",         "displayOrder": 2,  "version": 1 },
+  { "key": "vitaminD",         "displayName": "비타민 D",            "iconAssetName": "vitaminD",         "displayOrder": 3,  "version": 1 },
+  { "key": "vitaminB",         "displayName": "비타민 B",            "iconAssetName": "vitaminB",         "displayOrder": 4,  "version": 1 },
+  { "key": "multivitamin",     "displayName": "종합 비타민",         "iconAssetName": "multivitamin",     "displayOrder": 5,  "version": 1 },
+  { "key": "calciumMagnesium", "displayName": "칼슘 마그네슘",       "iconAssetName": "calciumMagnesium", "displayOrder": 6,  "version": 1 },
+  { "key": "probiotics",       "displayName": "유산균",              "iconAssetName": "probiotics",       "displayOrder": 7,  "version": 1 },
+  { "key": "iron",             "displayName": "철분",                "iconAssetName": "iron",             "displayOrder": 8,  "version": 1 },
+  { "key": "zinc",             "displayName": "아연",                "iconAssetName": "zinc",             "displayOrder": 9,  "version": 1 },
+  { "key": "lutein",           "displayName": "루테인",              "iconAssetName": "lutein",           "displayOrder": 10, "version": 1 },
+  { "key": "collagen",         "displayName": "콜라겐",              "iconAssetName": "collagen",         "displayOrder": 11, "version": 1 },
+  { "key": "other",            "displayName": "기타",                "iconAssetName": "other",            "displayOrder": 12, "version": 1 }
+]

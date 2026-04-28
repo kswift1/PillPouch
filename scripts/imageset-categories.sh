@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# 캡슐 PNG → Asset Catalog Image Set 자동 등록.
+# 카테고리 PNG → Asset Catalog Image Set 자동 등록.
 #
-# 입력: design/capsules/raw/{name}.png (GPT Image 2 산출물, ≥1024px)
-# 출력: ios/PillPouch/Assets.xcassets/Capsules/{name}.imageset/
+# 입력: design/categories/raw/{name}.png (GPT Image 2 산출물, ≥1024px)
+# 출력: ios/PillPouch/Assets.xcassets/Categories/{name}.imageset/
 #       (Contents.json + {name}@1x.png + @2x + @3x — base 128pt 기준)
 #
 # 의존: imagemagick (brew install imagemagick), python3
-# 참조: docs/plans/task_W2_11_impl.md, docs/design-system.md §7
+# 참조: docs/plans/task_W2_17_impl.md, docs/adr/0007-server-catalog-as-source-of-truth.md
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RAW_DIR="$ROOT/design/capsules/raw"
-ASSET_DIR="$ROOT/ios/PillPouch/Assets.xcassets/Capsules"
+RAW_DIR="$ROOT/design/categories/raw"
+ASSET_DIR="$ROOT/ios/PillPouch/Assets.xcassets/Categories"
 SCRIPT_DIR="$ROOT/scripts"
-SPEC="$SCRIPT_DIR/capsule-spec.json"
+SPEC="$SCRIPT_DIR/category-spec.json"
 
 command -v magick >/dev/null 2>&1 || {
   echo "missing dep: magick — run \`brew install imagemagick\`" >&2
@@ -26,7 +26,7 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 if [[ $# -eq 0 ]]; then
-  set -- tablet softgel capsule powder liquid gummy
+  set -- omega3 vitaminC vitaminD vitaminB multivitamin calciumMagnesium probiotics iron zinc lutein collagen other
 fi
 
 base_size="$(python3 -c "import json; print(json.load(open('$SPEC'))['_base_size'])")"
@@ -87,7 +87,7 @@ JSON
   echo "  ✓ $set_dir (@1x ${w1}×${h1}, @2x ${w2}×${h2}, @3x ${w3}×${h3})" >&2
 done
 
-# 그룹 Contents.json (Capsules 자체) — namespace 없음, 기존 CapsuleAsset.swift의 raw value(tablet 등) 그대로 매칭
+# 그룹 Contents.json (Categories 자체) — namespace 없음, category-seed.json의 iconAssetName(omega3 등) 그대로 매칭
 cat > "$ASSET_DIR/Contents.json" <<JSON
 {
   "info" : { "version" : 1, "author" : "xcode" }

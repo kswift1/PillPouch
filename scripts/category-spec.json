@@ -1,0 +1,16 @@
+{
+  "_comment": "카테고리 12종 base size (pt). @1x=base, @2x=base*2, @3x=base*3로 imageset 생성. base 사이즈는 list slot 32pt + Today hero 96~128pt 모두 커버하도록 128로 통일. 12종 전부 정사각형(1:1) — GPT Image 2 v4 톤으로 동일 캔버스에서 생성.",
+  "_base_size": 128,
+  "omega3":           { "ratio": "1:1", "tone": "single" },
+  "vitaminC":         { "ratio": "1:1", "tone": "single" },
+  "vitaminD":         { "ratio": "1:1", "tone": "single" },
+  "vitaminB":         { "ratio": "1:1", "tone": "single" },
+  "multivitamin":     { "ratio": "1:1", "tone": "multi"  },
+  "calciumMagnesium": { "ratio": "1:1", "tone": "two"    },
+  "probiotics":       { "ratio": "1:1", "tone": "single" },
+  "iron":             { "ratio": "1:1", "tone": "single" },
+  "zinc":             { "ratio": "1:1", "tone": "single" },
+  "lutein":           { "ratio": "1:1", "tone": "single" },
+  "collagen":         { "ratio": "1:1", "tone": "single" },
+  "other":            { "ratio": "1:1", "tone": "single" }
+}
