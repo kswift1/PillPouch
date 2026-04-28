@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
-# 캡슐 PNG → Asset Catalog Image Set 자동 등록.
+# 카테고리 PNG → Asset Catalog Image Set 자동 등록.
 #
-# 입력: design/capsules/raw/{name}.png (GPT Image 2 산출물, ≥1024px)
-# 출력: ios/PillPouch/Assets.xcassets/Capsules/{name}.imageset/
-#       (Contents.json + {name}@1x.png + @2x + @3x — base 128pt 기준)
+# 입력: design/categories/raw/{key}.png (GPT Image 2 산출물, ≥1024px)
+# 출력: ios/PillPouch/Assets.xcassets/Categories/{key}.imageset/
+#       (Contents.json + {key}@1x.png + @2x + @3x — base 128pt 기준)
 #
 # 의존: imagemagick (brew install imagemagick), python3
-# 참조: docs/plans/task_W2_11_impl.md, docs/design-system.md §7
+# 참조: docs/plans/task_W2_17_impl.md, docs/adr/0007-server-catalog-as-source-of-truth.md
+#
+# 16종 (시장조사 후 12 → 17 → 16, 홍삼 제거 2026-04-28 작업지시자 결정):
+#   omega3 probiotics vitaminC multivitamin vitaminD vitaminB
+#   milkThistle glucosamine lutein collagen magnesium calcium iron zinc coq10 other
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RAW_DIR="$ROOT/design/capsules/raw"
-ASSET_DIR="$ROOT/ios/PillPouch/Assets.xcassets/Capsules"
+RAW_DIR="$ROOT/design/categories/raw"
+ASSET_DIR="$ROOT/ios/PillPouch/Assets.xcassets/Categories"
 SCRIPT_DIR="$ROOT/scripts"
-SPEC="$SCRIPT_DIR/capsule-spec.json"
+SPEC="$SCRIPT_DIR/category-spec.json"
 
 command -v magick >/dev/null 2>&1 || {
   echo "missing dep: magick — run \`brew install imagemagick\`" >&2
@@ -26,7 +30,8 @@ command -v python3 >/dev/null 2>&1 || {
 }
 
 if [[ $# -eq 0 ]]; then
-  set -- tablet softgel capsule powder liquid gummy
+  set -- omega3 probiotics vitaminC multivitamin vitaminD vitaminB \
+         milkThistle glucosamine lutein collagen magnesium calcium iron zinc coq10 other
 fi
 
 base_size="$(python3 -c "import json; print(json.load(open('$SPEC'))['_base_size'])")"
@@ -46,12 +51,9 @@ for name in "$@"; do
   rw="${ratio%%:*}"
   rh="${ratio##*:}"
 
-  # @1x, @2x, @3x 사이즈 계산 (base × scale, ratio 적용)
-  # 정사각형(1:1)이면 base × base, (20:28)이면 가로 base * 20/28, 세로 base
   if [[ "$rw" == "$rh" ]]; then
     w1="$base_size"; h1="$base_size"
   else
-    # 세로 기준 base
     h1="$base_size"
     w1="$(python3 -c "print(int($base_size * $rw / $rh))")"
   fi
@@ -61,8 +63,7 @@ for name in "$@"; do
   set_dir="$ASSET_DIR/$name.imageset"
   mkdir -p "$set_dir"
 
-  # 1. 배경 제거 — white BG → transparent (GPT Image 2가 transparent 미지원이라 사후 처리)
-  #    fuzz 5% — 거의 흰(≥#F2F2F2) 픽셀만 투명. 베이지 highlight·회색 shadow는 안전.
+  # 1. 배경 제거 — fuzz 5%로 거의 흰(≥#F2F2F2) 픽셀만 투명. 매트 컬러 highlight·회색 shadow는 안전.
   cut="$RAW_DIR/.tmp-${name}-cut.png"
   magick "$src" -fuzz 5% -transparent white "$cut"
 
@@ -72,7 +73,6 @@ for name in "$@"; do
   magick "$cut" -filter Lanczos -resize "${w3}x${h3}!" -strip "$set_dir/$name@3x.png"
   rm -f "$cut"
 
-  # Contents.json 작성 (Universal Image Set 표준 형식)
   cat > "$set_dir/Contents.json" <<JSON
 {
   "images" : [
@@ -87,7 +87,6 @@ JSON
   echo "  ✓ $set_dir (@1x ${w1}×${h1}, @2x ${w2}×${h2}, @3x ${w3}×${h3})" >&2
 done
 
-# 그룹 Contents.json (Capsules 자체) — namespace 없음, 기존 CapsuleAsset.swift의 raw value(tablet 등) 그대로 매칭
 cat > "$ASSET_DIR/Contents.json" <<JSON
 {
   "info" : { "version" : 1, "author" : "xcode" }
