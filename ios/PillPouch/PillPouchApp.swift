@@ -14,6 +14,7 @@ struct PillPouchApp: App {
             IntakeSchedule.self,
             IntakeLog.self,
             UserSettings.self,
+            CategoryMirror.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

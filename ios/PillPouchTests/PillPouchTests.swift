@@ -9,12 +9,6 @@ import Foundation
 @testable import PillPouch
 
 @Suite struct EnumRoundtripTests {
-    @Test func 캡슐타입_raw값_왕복_복원() {
-        for c in CapsuleType.allCases {
-            #expect(CapsuleType(rawValue: c.rawValue) == c)
-        }
-    }
-
     @Test func 시간슬롯_raw값_왕복_복원() {
         for s in TimeSlot.allCases {
             #expect(TimeSlot(rawValue: s.rawValue) == s)
@@ -25,15 +19,6 @@ import Foundation
         for s in IntakeStatus.allCases {
             #expect(IntakeStatus(rawValue: s.rawValue) == s)
         }
-    }
-
-    @Test func 캡슐타입_raw값_안정성_고정() {
-        #expect(CapsuleType.tablet.rawValue == "tablet")
-        #expect(CapsuleType.softgel.rawValue == "softgel")
-        #expect(CapsuleType.capsule.rawValue == "capsule")
-        #expect(CapsuleType.powder.rawValue == "powder")
-        #expect(CapsuleType.liquid.rawValue == "liquid")
-        #expect(CapsuleType.gummy.rawValue == "gummy")
     }
 
     @Test func 시간슬롯_raw값_안정성_고정() {
@@ -49,25 +34,9 @@ import Foundation
     }
 }
 
-@Suite struct SupplementComputedTests {
-    @Test func 캡슐타입_setter_호출시_raw값_동기화() {
-        let s = Supplement(name: "비타민D", capsuleType: .softgel)
-        #expect(s.capsuleTypeRaw == "softgel")
-        s.capsuleType = .gummy
-        #expect(s.capsuleTypeRaw == "gummy")
-        #expect(s.capsuleType == .gummy)
-    }
-
-    @Test func 캡슐타입_잘못된_raw_입력시_capsule로_폴백() {
-        let s = Supplement(name: "오메가-3", capsuleType: .softgel)
-        s.capsuleTypeRaw = "not-a-real-type"
-        #expect(s.capsuleType == .capsule)
-    }
-}
-
 @Suite struct IntakeLogComputedTests {
     @Test func 복용상태_setter_호출시_raw값_동기화() {
-        let s = Supplement(name: "비타민C", capsuleType: .tablet)
+        let s = Supplement(name: "비타민C", categoryKey: "vitaminC")
         let log = IntakeLog(supplement: s, timeSlot: .morning, status: .taken)
         #expect(log.statusRaw == "taken")
         log.status = .skipped
@@ -76,7 +45,7 @@ import Foundation
     }
 
     @Test func 시간슬롯_setter_호출시_raw값_동기화() {
-        let s = Supplement(name: "비타민C", capsuleType: .tablet)
+        let s = Supplement(name: "비타민C", categoryKey: "vitaminC")
         let log = IntakeLog(supplement: s, timeSlot: .morning, status: .taken)
         log.timeSlot = .evening
         #expect(log.timeSlotRaw == "evening")
@@ -118,6 +87,62 @@ import Foundation
     }
 }
 
+@Suite struct CategoryMirrorTests {
+    private func 인메모리_컨테이너_생성() throws -> ModelContainer {
+        let schema = Schema([CategoryMirror.self])
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: [config])
+    }
+
+    @Test func 카테고리미러_초기화_필드_보존() {
+        let url = URL(string: "https://example.com/icons/vitaminD.png")!
+        let m = CategoryMirror(
+            key: "vitaminD",
+            displayName: "비타민 D",
+            iconRemoteURL: url,
+            displayOrder: 3,
+            version: 1
+        )
+        #expect(m.key == "vitaminD")
+        #expect(m.displayName == "비타민 D")
+        #expect(m.iconLocalPath == nil)
+        #expect(m.iconRemoteURL == url)
+        #expect(m.displayOrder == 3)
+        #expect(m.version == 1)
+    }
+
+    @Test func 카테고리미러_저장_후_조회() throws {
+        let container = try 인메모리_컨테이너_생성()
+        let context = ModelContext(container)
+        let m = CategoryMirror(
+            key: "omega3",
+            displayName: "오메가-3",
+            iconRemoteURL: URL(string: "https://example.com/icons/omega3.png")!,
+            displayOrder: 1,
+            version: 1
+        )
+        context.insert(m)
+        try context.save()
+        let fetched = try context.fetch(FetchDescriptor<CategoryMirror>())
+        #expect(fetched.count == 1)
+        #expect(fetched.first?.key == "omega3")
+        #expect(fetched.first?.displayName == "오메가-3")
+    }
+
+    @Test func 카테고리미러_iconLocalPath_갱신_가능() {
+        let m = CategoryMirror(
+            key: "vitaminC",
+            displayName: "비타민 C",
+            iconRemoteURL: URL(string: "https://example.com/icons/vitaminC.png")!,
+            displayOrder: 2,
+            version: 1
+        )
+        #expect(m.iconLocalPath == nil)
+        m.iconLocalPath = "/var/mobile/Containers/.../vitaminC.png"
+        #expect(m.iconLocalPath?.hasSuffix("vitaminC.png") == true)
+    }
+}
+
 @Suite struct ModelContainerSmokeTests {
     private func 인메모리_컨테이너_생성() throws -> ModelContainer {
         let schema = Schema([
@@ -125,6 +150,7 @@ import Foundation
             IntakeSchedule.self,
             IntakeLog.self,
             UserSettings.self,
+            CategoryMirror.self,
         ])
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])
@@ -133,19 +159,19 @@ import Foundation
     @Test func 모델컨테이너_supplement_삽입_후_조회() throws {
         let container = try 인메모리_컨테이너_생성()
         let context = ModelContext(container)
-        let s = Supplement(name: "오메가-3", capsuleType: .softgel)
+        let s = Supplement(name: "오메가-3", categoryKey: "omega3")
         context.insert(s)
         try context.save()
         let fetched = try context.fetch(FetchDescriptor<Supplement>())
         #expect(fetched.count == 1)
         #expect(fetched.first?.name == "오메가-3")
-        #expect(fetched.first?.capsuleType == .softgel)
+        #expect(fetched.first?.categoryKey == "omega3")
     }
 
     @Test func cascade_삭제시_하위_schedule과_log_제거() throws {
         let container = try 인메모리_컨테이너_생성()
         let context = ModelContext(container)
-        let s = Supplement(name: "비타민C", capsuleType: .tablet)
+        let s = Supplement(name: "비타민C", categoryKey: "vitaminC")
         context.insert(s)
         let schedule = IntakeSchedule(supplement: s, timeSlot: .morning, dose: 2)
         let log = IntakeLog(supplement: s, timeSlot: .morning, status: .taken)
