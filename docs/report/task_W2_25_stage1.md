@@ -106,3 +106,120 @@ docs: add Stage 1 report
 ## 승인 ⛔
 
 작업지시자 검토 후 옵션 A/B/C 결정 + 승인 시 Stage 2 진입.
+
+---
+
+# 추가: Redesign 1차 (글라싱지 → 플라스틱 봉지 + 슬롯 도장)
+
+## 트리거
+
+작업지시자 1차 시각 검토 — 실제 약봉지 사진 추가 첨부 후 다음 진단:
+1. 글라싱지 paper 스타일이 아닌 **플라스틱 약국 봉지** (열압착 plastic)이 정답
+2. 우상단 V컷 + 화살표 마커가 어색 → 실제는 **옆구리 V노치** (찢기 시작점)
+3. 시간대 표시 추가 — 원형 도장 스타일 (아이콘 + 한글 텍스트, baked-in PNG)
+
+옵션 A/B/C 중 **C(같은 stage 내 핀포인트 redesign)** 선택. Stage 분리 없이 처리.
+
+## 작업 내역
+
+### 자산 (사용자 제공 + 처리)
+
+| 자산 | 원본 | 처리 (white→transparent) | 최종 위치 |
+|---|---|---|---|
+| 아침 도장 (한글) | `image-v4.png` | `magick -fuzz 8% -transparent white` | `Assets.xcassets/SlotStamps/SlotMorning.imageset/slot_morning.png` |
+| 점심 도장 (한글) | `image-v8.png` | 동일 | `SlotLunch.imageset/slot_lunch.png` |
+| 저녁 도장 (한글) | `image-v10.png` | 동일 | `SlotEvening.imageset/slot_evening.png` |
+| 영문 변형 (보관) | `image-v5/v9/v11.png` | `.context/attachments/`에 transparent 보관 | 미사용 (B3 결정: 한글 고정) |
+
+각 imageset Contents.json: `template-rendering-intent: template` 설정 → SwiftUI에서 `.foregroundStyle(slotColor)` 동적 적용.
+
+### 결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| A. 색 처리 방식 | **A2: Template + 슬롯 색조** | 베이지 단색 자산 1세트로 morning/lunch/evening 색 자동 분기. 봉지 위에서 색 신호 강함 |
+| B. 한글/영문 분기 | **B3: 한글 고정** | 영문 자산 보관, 추후 i18n 시 사용. 현재 한국 사용자 대상 |
+
+### 신규 / 수정 파일
+
+| 파일 | 변경 |
+|---|---|
+| `Features/Pouch/SlotStamp.swift` | 신규 — Image template + 슬롯 색조/회전/opacity |
+| `Features/Pouch/PouchPaperLayer.swift` | 전면 redesign — 플라스틱 본체 + plastic sheen + 굵은 serrated heat-seal (top 14pt + bottom 12pt) + 옆 V노치 + 헤더(SlotStamp + 약국 정보 + monospace 용법 라인 + dotted divider) |
+| `Features/Pouch/PouchView.swift` | `slot: TimeSlot` props 추가 → `PouchPaperLayer(slot:)` 전달 |
+| `Features/Showcase/PouchShowcaseView.swift` | 슬롯 토글 Picker 추가 (아침/점심/저녁) |
+| `Assets.xcassets/SlotStamps/` | 신규 — 3개 imageset + namespace Contents.json |
+
+기존 `fiberTexture()`, `tearMarker()` (모서리 V컷+화살표) 완전 제거.
+
+### 색 스펙 (Light / Dark 모드별)
+
+| 요소 | Light | Dark |
+|---|---|---|
+| Pouch fill | `#FCFAF5 ×0.92` | `#D8D2C8 ×0.18` |
+| Heat-seal fill | `#D9D1BF ×0.55` | `#4A453E ×0.55` |
+| Heat-seal serration edge | `#B8AE99 ×0.65` | `#5C5650 ×0.65` |
+| 옆 V노치 line | `#5C5650 ×0.30, 0.7pt` | `#D8D2C8 ×0.30, 0.7pt` |
+| 헤더 약국명 | `PPColor.textPrimary ×0.55` | 동일 (다크 텍스트 자동) |
+| 헤더 환자/용법 | `PPColor.textSecondary ×0.55` | 동일 |
+| 헤더 구분선 | `textSecondary ×0.30, 0.5pt` | 동일 |
+| Slot stamp morning/lunch | slot color × 0.78 | 동일 |
+| Slot stamp evening | slot color × **0.72** | 동일 (퍼플 따뜻한 배경에서 살짝 누름) |
+
+## 검증
+
+### 빌드
+```
+xcodebuild -scheme PillPouch -sdk iphonesimulator build
+** BUILD SUCCEEDED **
+```
+
+### 스크린샷 (6장, iPhone 16 Pro)
+
+| 파일 | 슬롯 | 모드 |
+|---|---|---|
+| `sealed-morning-light.png` | 아침 (골드) | Light |
+| `sealed-morning-dark.png` | 아침 (골드) | Dark |
+| `sealed-lunch-light.png` | 점심 (테라코타) | Light |
+| `sealed-lunch-dark.png` | 점심 (테라코타) | Dark |
+| `sealed-evening-light.png` | 저녁 (퍼플) | Light |
+| `sealed-evening-dark.png` | 저녁 (퍼플) | Dark |
+
+기존 `sealed-light.png` / `sealed-dark.png` → `sealed-v1-{light,dark}.png` 로 rename(legacy 보존).
+
+### 시각 평가 (사진 vs. 현재 결과)
+
+| 항목 | 1차 (글라싱지) | 2차 (플라스틱 + 도장) | 평가 |
+|---|---|---|---|
+| 봉지 재질 | 페이퍼 종이 | **플라스틱 + 따뜻한 sheen** | ✅ 사진과 일치 |
+| 상하단 가장자리 | 가는 dashed | **굵은 serrated 띠** (zigzag pinking-shears) | ✅ 사진과 일치 |
+| 찢기 시작점 | 우상단 V컷 + 화살표 | **옆구리 V노치 좌/우** | ✅ 사진과 일치 |
+| 헤더 위치 | 본체 안 상단 | **상단 열압착 띠 아래** (별도 영역) | ✅ 정합 |
+| 시간대 표시 | 없음 | **원형 슬롯 도장 (아이콘 + 한글 + 슬롯 색조)** | ✅ 추가 |
+| 용법 라인 typography | 일반 | **monospace** (처방전 인쇄 느낌) | ✅ 디테일 살림 |
+| 라이트 가독성 | 충분 | **충분, 도장이 색 신호로 즉각 인지** | ✅ |
+| 다크 반투명 효과 | 흰 봉지가 단단함 | **반투명 overlay (0.18) — 어두운 배경 비침** | ✅ 자연스러움 |
+| 도장 회전 | — | morning -3° / lunch +1.5° / evening -1.5° 손도장 느낌 | ✅ |
+
+남은 미세 issue:
+- 상단 heat-seal serration이 하단 대비 약간 흐림 (offset 계산 미세 조정 가능, 후속 polish)
+- 헤더 정보 텍스트 — placeholder copy ("PillPouch 약국", "환자: 사용자")는 mock. 실 데이터 연결은 별도 task.
+
+## 결론
+
+Stage 1 redesign으로 사진 수준 재현 + 슬롯 시간대 표시 동시 달성. **Stage 2 (알약 시각 + 정적 배치) 진입 준비 완료.**
+
+## 추가 커밋
+
+```
+feat(ios): redesign pouch as plastic with serrated heat-seal and side notches
+feat(ios): add SlotStamp asset set (morning/lunch/evening) with template rendering
+feat(ios): wire slot color and rotation into pouch header
+docs: add 6 redesign screenshots (3 slots × 2 modes)
+docs: rename legacy v1 screenshots to sealed-v1-{light,dark}.png
+docs: append redesign 1차 section to Stage 1 report
+```
+
+## 승인 ⛔ (재)
+
+작업지시자 검토 후 Stage 2 진입.
