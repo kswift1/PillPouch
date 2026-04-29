@@ -48,11 +48,12 @@ struct PouchView: View {
 
     /// PaperLayer 합성 — `.lift` 면 위/아래 두 조각 분리해 위쪽 transform,
     /// `.gap` 이면 단일 PaperLayer (TearLayer 가 가운데 어두운 틈 그림).
+    /// PaperTop/Bottom 은 같은 seed JaggedTearPath mask 로 단면 정확히 맞물림.
     @ViewBuilder
     private var paperLayerStack: some View {
         if tearStyle == .lift {
-            PouchPaperBottom(slot: slot)
-            PouchPaperTop(slot: slot)
+            PouchPaperBottom(slot: slot, tearProgress: tearProgress)
+            PouchPaperTop(slot: slot, tearProgress: tearProgress)
                 .offset(y: -tearLiftDistance)
                 .rotationEffect(.degrees(tearTiltAngle), anchor: .top)
                 .shadow(color: .black.opacity(tearShadowOpacity), radius: 4, x: 0, y: 2)

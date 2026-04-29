@@ -212,9 +212,11 @@ struct PouchPaperLayer: View {
 }
 
 /// PaperLayer 의 perforation 위쪽 절반. lift tear 시 본체와 분리되어 transform 됨.
-/// 내부적으로 PouchPaperLayer 그리고 horizontal Rectangle mask 로 잘라 위쪽만 노출.
+/// mask 는 JaggedTearPath — 진행도 비율만큼 무작위 jagged, 나머지는 직선.
+/// PaperBottom 과 같은 seed → 위/아래 단면 정확히 맞물림.
 struct PouchPaperTop: View {
     let slot: TimeSlot
+    let tearProgress: Double
 
     var body: some View {
         GeometryReader { geo in
@@ -222,9 +224,13 @@ struct PouchPaperTop: View {
             PouchPaperLayer(slot: slot)
                 .frame(width: geo.size.width, height: geo.size.height)
                 .mask(
-                    Rectangle()
-                        .frame(width: geo.size.width, height: y)
-                        .position(x: geo.size.width / 2, y: y / 2)
+                    JaggedTearPath(
+                        progress: tearProgress,
+                        perforationY: y,
+                        inset: PouchPaperSplit.tearInset,
+                        region: .top,
+                        seed: PouchPaperSplit.tearSeed
+                    )
                 )
         }
     }
@@ -233,20 +239,31 @@ struct PouchPaperTop: View {
 /// PaperLayer 의 perforation 아래쪽 절반. lift tear 시 본체로 고정.
 struct PouchPaperBottom: View {
     let slot: TimeSlot
+    let tearProgress: Double
 
     var body: some View {
         GeometryReader { geo in
             let y = PouchView.perforationY(in: geo.size)
-            let bottomHeight = max(0, geo.size.height - y)
             PouchPaperLayer(slot: slot)
                 .frame(width: geo.size.width, height: geo.size.height)
                 .mask(
-                    Rectangle()
-                        .frame(width: geo.size.width, height: bottomHeight)
-                        .position(x: geo.size.width / 2, y: y + bottomHeight / 2)
+                    JaggedTearPath(
+                        progress: tearProgress,
+                        perforationY: y,
+                        inset: PouchPaperSplit.tearInset,
+                        region: .bottom,
+                        seed: PouchPaperSplit.tearSeed
+                    )
                 )
         }
     }
+}
+
+/// PaperTop/Bottom 의 jagged tear path 가 공유하는 상수.
+enum PouchPaperSplit {
+    static let tearInset: CGFloat = 16
+    /// Seed 변경 시 jagged 패턴이 바뀜. PaperTop 과 PaperBottom 동일 seed 필수.
+    static let tearSeed: UInt64 = 0xC0FFEE_BEEF
 }
 
 /// 봉지 outline + 좌/우 perforation 반원 노치를 뺀 shape.
