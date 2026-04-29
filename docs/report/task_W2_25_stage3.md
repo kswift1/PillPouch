@@ -974,3 +974,70 @@ docs: append Stage 3 polish v8 section
 ```
 
 ## 승인 ⛔ (9차)
+
+---
+
+# 추가: Polish v9 — 마찰/Sleep/Haptic/회전 좌표 (작업지시자 직접 수정)
+
+## 트리거
+
+작업지시자가 PillPhysicsEngine + MotionEngine 직접 polish — 실 기기 UX 향상을 위한 다층 개선.
+
+## 변경
+
+### PillPhysicsEngine
+
+| 추가 | 효과 |
+|---|---|
+| **정지/동 마찰 분리** (`staticFrictionGravityThreshold 0.08`, `kineticFrictionGravityThreshold 0.03`, `staticFrictionVelocityThreshold 5`) | 약하게 들고 있을 땐 안 움직이고, 한 번 흐르면 더 작은 임계로 부드럽게 |
+| **Frame-rate 보정 damping** (`pow(damping, dt*60)`) | dt 변동(백그라운드 복귀, 프레임 드롭)에 일관 거동 |
+| **`sleepIfNeeded`** (`sleepVelocity 0.8`, angular threshold 0.2) | 센서 noise creep 차단 — 잔류 속도/회전 0으로 |
+| **`settlingNormalVelocity 45`** | 약한 벽 침범은 튕김 X 정착 — 자연스러운 정지 |
+| **`StepResult` haptic 이벤트** (`hapticImpactThreshold 160`, `hapticImpactFullScale 440`) | 충돌 강도 매핑 0.16~0.40 — 강한 충돌만 햅틱 |
+| **`tick` bounds collision 2회 호출** | pair push-apart 후 봉지 밖 새는 케이스 재클램프 |
+| **Frame-rate 보정 angular damping** | translation 과 일관 |
+
+### RealMotionEngine
+
+| 추가 | 효과 |
+|---|---|
+| **`smoothingFactor 0.22` 저역 통과 lerp** | 센서 떨림 완화 |
+| **`hasReceivedGravity` flag** | 첫 샘플 즉시 반영 — 시작 lag 방지 |
+| **`mapToCurrentScreenCoordinates`** (portrait/portraitUpsideDown/landscapeLeft/landscapeRight 4방향) | 회전 시 gravity 매핑 정확. iPad/회전 핵심 fix |
+| **`UIWindowScene.interfaceOrientation` 기반 동적 분기** | 시스템 회전 자동 감지 |
+
+### 신규 테스트 4개
+
+| 케이스 | 검증 |
+|---|---|
+| `작은_중력은_정지마찰로_무시된다` | gravity (0.03, 0.02) → 변화 X |
+| `damping은_dt_기반으로_적용된다` | dt 1/30 → 100 * 0.95² = 90.25 |
+| `약한_벽_침범은_튕기지_않고_정착한다` | settlingNormalVelocity 45 미만 → bounce X, 햅틱 X |
+| `강한_벽_충돌은_haptic_event를_남긴다` | velocity 300 dy → reflect -60, `shouldPlayHaptic == true` |
+
+## 검증
+
+```
+** TEST SUCCEEDED **
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| Static friction threshold | 0.08 | 평평하게 든 상태 sensor noise 무시. iPhone 가만히 들면 gravity 변동 ~0.02 |
+| Kinetic threshold | 0.03 | 이미 움직이는 알약은 더 작은 trigger — 부드러운 흐름 |
+| Sleep velocity 0.8 | < 1 pt/s 면 0 | sensor creep 방지 + 시각상 정지 동일 |
+| Settling normal velocity 45 | 약한 침범은 튕김 X | 중력 한 frame 누적은 reflect 부자연 — 정착으로 처리 |
+| Haptic threshold 160 / fullScale 440 | 강한 충돌만 햅틱 | UX 거슬림 방지. intensity 0.16~0.40 약간 약함 — 실 기기 검증 후 조정 가능 |
+| Smoothing 0.22 | sensor lag/noise 균형 | 0.5+ noise 강함, 0.1- lag 큼 |
+| 회전 좌표 4방향 | iPad + 회전 시 필수 | 이전 portrait fixed 가정으로 landscape 반대 방향 흐름 |
+| frame-rate 보정 (`pow(d, dt*60)`) | 60Hz 기준 일관 | dt 변동에 invariant |
+
+## 추가 커밋
+
+```
+feat(ios): refine motion physics with friction, sleep, haptics, and orientation-aware gravity (#25 stage3 polish v9)
+```
+
+## 승인 ⛔ (10차) — Stage 3 최종
