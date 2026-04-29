@@ -5,32 +5,93 @@
 
 import SwiftUI
 
-/// 찢김 시각 — perforation Y 라인 따라 좌→우 zigzag path 가 progress 비율만큼 노출.
-/// `.sealed` 일 땐 그리지 않음 (PaperLayer 의 dashed line 만 보임).
-/// `.tearing(progress)` 진행도 따라 zigzag 길이 늘어남.
-/// `.torn` 일 땐 zigzag full + 윗부분 살짝 어둑한 cut-edge overlay.
+/// 찢김 시각 — 두 가지 스타일 비교용. ShowcaseView Picker 로 토글.
+/// - `.lift`: 봉지 위쪽 조각이 들려 회전 (PaperLayer 복제본 + transform)
+/// - `.gap`: perforation 라인에 벌어진 틈이 좌→우 열림 (위/아래 jagged edge)
 struct PouchTearLayer: View {
     let state: PouchState
+    let slot: TimeSlot
+    let style: TearStyle
+
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        switch style {
+        case .lift: liftView
+        case .gap:  gapView
+        }
+    }
+
+    // MARK: - Style 1: Lift (위쪽 조각 들림 + 회전)
+
+    @ViewBuilder
+    private var liftView: some View {
         GeometryReader { geo in
-            let y = PouchView.perforationY(in: geo.size)
             if let progress = activeProgress() {
-                ZigZagTear(progress: progress, y: y, inset: Const.inset)
-                    .stroke(strokeColor, lineWidth: Const.lineWidth)
-                    .allowsHitTesting(false)
-                if progress >= 0.99 {
-                    Rectangle()
-                        .fill(cutEdgeShade)
-                        .frame(height: Const.cutEdgeHeight)
-                        .position(x: geo.size.width / 2, y: y - Const.cutEdgeHeight / 2)
-                        .blendMode(.multiply)
+                let y = PouchView.perforationY(in: geo.size)
+                let lift = CGFloat(progress) * Const.liftMaxDistance
+                let tilt = progress * Const.liftMaxAngle
+
+                ZStack {
+                    // 위쪽 조각 — PaperLayer 복제본 mask + transform
+                    PouchPaperLayer(slot: slot)
+                        .mask(
+                            Rectangle()
+                                .frame(width: geo.size.width, height: y + Const.jaggedAmplitude)
+                                .position(x: geo.size.width / 2, y: (y + Const.jaggedAmplitude) / 2)
+                        )
+                        .offset(y: -lift)
+                        .rotationEffect(.degrees(tilt), anchor: .top)
+                        .shadow(color: .black.opacity(progress * 0.22), radius: 4, x: 0, y: 2)
+                        .allowsHitTesting(false)
+
+                    // 들린 조각 하단 jagged edge — 종이 찢긴 가장자리
+                    ZigZagEdge(progress: progress, y: y - lift, inset: Const.inset, amplitude: Const.jaggedAmplitude)
+                        .stroke(edgeColor, lineWidth: Const.lineWidth)
+                        .allowsHitTesting(false)
+
+                    // 본체 측 가장자리 (들리지 않은 아래쪽)
+                    ZigZagEdge(progress: progress, y: y, inset: Const.inset, amplitude: Const.jaggedAmplitude)
+                        .stroke(edgeColor.opacity(0.65), lineWidth: Const.lineWidth)
                         .allowsHitTesting(false)
                 }
             }
         }
     }
+
+    // MARK: - Style 2: Gap (벌어진 틈 좌→우 열림)
+
+    @ViewBuilder
+    private var gapView: some View {
+        GeometryReader { geo in
+            if let progress = activeProgress() {
+                let y = PouchView.perforationY(in: geo.size)
+                let inset = Const.inset
+                let usableWidth = max(0, geo.size.width - inset * 2)
+                let gapWidth = usableWidth * CGFloat(progress)
+                let gapHeight: CGFloat = CGFloat(progress) * Const.gapMaxHeight
+
+                ZStack {
+                    // 벌어진 틈 — 안쪽 어두움
+                    Rectangle()
+                        .fill(gapInnerColor)
+                        .frame(width: gapWidth, height: gapHeight)
+                        .position(x: inset + gapWidth / 2, y: y)
+                        .allowsHitTesting(false)
+
+                    // 위/아래 jagged edge
+                    ZigZagEdge(progress: progress, y: y - gapHeight / 2, inset: inset, amplitude: Const.jaggedAmplitude)
+                        .stroke(edgeColor, lineWidth: Const.lineWidth)
+                        .allowsHitTesting(false)
+                    ZigZagEdge(progress: progress, y: y + gapHeight / 2, inset: inset, amplitude: Const.jaggedAmplitude)
+                        .stroke(edgeColor, lineWidth: Const.lineWidth)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+    }
+
+    // MARK: - Helpers
 
     private func activeProgress() -> Double? {
         switch state {
@@ -40,26 +101,30 @@ struct PouchTearLayer: View {
         }
     }
 
-    private var strokeColor: Color {
+    private var edgeColor: Color {
         scheme == .dark ? Color.white.opacity(0.55) : Color.black.opacity(0.45)
     }
 
-    private var cutEdgeShade: Color {
-        scheme == .dark ? Color.black.opacity(0.30) : Color.black.opacity(0.06)
+    private var gapInnerColor: Color {
+        scheme == .dark ? Color.black.opacity(0.55) : Color.black.opacity(0.18)
     }
 
     private enum Const {
         static let inset: CGFloat = 16
-        static let lineWidth: CGFloat = 1.2
-        static let cutEdgeHeight: CGFloat = 6
+        static let lineWidth: CGFloat = 1.0
+        static let jaggedAmplitude: CGFloat = 3
+        static let liftMaxDistance: CGFloat = 8
+        static let liftMaxAngle: Double = 6
+        static let gapMaxHeight: CGFloat = 5
     }
 }
 
-/// 좌→우 zigzag — `progress` 비율만큼 path 그림. amplitude 3pt, half-period 6pt.
-private struct ZigZagTear: Shape {
+/// 좌→우 zigzag — `progress` 비율만큼 path 그림. amplitude 가변.
+private struct ZigZagEdge: Shape {
     var progress: Double
     let y: CGFloat
     let inset: CGFloat
+    let amplitude: CGFloat
 
     var animatableData: Double {
         get { progress }
@@ -70,7 +135,6 @@ private struct ZigZagTear: Shape {
         var p = Path()
         let usableWidth = max(0, rect.width - inset * 2)
         let endX = inset + usableWidth * CGFloat(max(0, min(1, progress)))
-        let amp: CGFloat = 3
         let halfPeriod: CGFloat = 6
 
         var x = inset
@@ -78,7 +142,7 @@ private struct ZigZagTear: Shape {
         p.move(to: CGPoint(x: x, y: y))
         while x < endX {
             let nextX = min(x + halfPeriod, endX)
-            let dy = step.isMultiple(of: 2) ? amp : -amp
+            let dy = step.isMultiple(of: 2) ? amplitude : -amplitude
             p.addLine(to: CGPoint(x: nextX, y: y + dy))
             x = nextX
             step += 1
@@ -87,14 +151,31 @@ private struct ZigZagTear: Shape {
     }
 }
 
-#Preview("PouchTearLayer · tearing 50%") {
-    PouchTearLayer(state: .tearing(progress: 0.5))
+/// 찢기 시각 스타일 비교용. Showcase Picker 로 토글.
+enum TearStyle: String, CaseIterable, Identifiable {
+    /// 봉지 위쪽 조각이 들리며 회전. PaperLayer 복제본 + transform.
+    case lift
+    /// perforation 라인에 벌어진 틈이 좌→우 열림. 위/아래 jagged edge.
+    case gap
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .lift: "Lift"
+        case .gap:  "Gap"
+        }
+    }
+}
+
+#Preview("Tear · Lift · 50%") {
+    PouchTearLayer(state: .tearing(progress: 0.5), slot: .morning, style: .lift)
         .frame(width: 240, height: 320)
         .background(.gray.opacity(0.1))
 }
 
-#Preview("PouchTearLayer · torn") {
-    PouchTearLayer(state: .torn)
+#Preview("Tear · Gap · 50%") {
+    PouchTearLayer(state: .tearing(progress: 0.5), slot: .morning, style: .gap)
         .frame(width: 240, height: 320)
         .background(.gray.opacity(0.1))
 }
