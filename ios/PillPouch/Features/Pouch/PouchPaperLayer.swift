@@ -166,7 +166,7 @@ struct PouchPaperLayer: View {
     private var bodyFill: Color {
         scheme == .dark
             ? Color(red: 0.85, green: 0.83, blue: 0.78).opacity(0.18)
-            : Color(red: 0.99, green: 0.98, blue: 0.96).opacity(0.92)
+            : Color(red: 0.99, green: 0.98, blue: 0.96).opacity(0.78)
     }
     private var bodyOutline: Color {
         scheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)
