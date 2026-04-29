@@ -27,10 +27,14 @@ final class RealMotionEngine: MotionEngineProtocol {
     func start() {
         guard manager.isDeviceMotionAvailable else { return }
         manager.deviceMotionUpdateInterval = 1.0 / 60.0
+        // .main OperationQueue → closure 는 메인 스레드 fire. Swift 6 strict 에서 @Sendable
+        // closure 안에서 self 직접 캡처 불가 → MainActor.assumeIsolated 로 단언.
         manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
-            guard let self, let motion else { return }
-            // CMMotionManager: x 우, y 위, z 화면 밖. SwiftUI: x 우, y 아래. y 부호 반전.
-            self.gravity = SIMD2(motion.gravity.x, -motion.gravity.y)
+            guard let motion else { return }
+            MainActor.assumeIsolated {
+                // CMMotionManager: x 우, y 위, z 화면 밖. SwiftUI: x 우, y 아래. y 부호 반전.
+                self?.gravity = SIMD2(motion.gravity.x, -motion.gravity.y)
+            }
         }
     }
 
@@ -57,22 +61,25 @@ final class MotionEngineMock: MotionEngineProtocol {
     var manualGravity: SIMD2<Double> = SIMD2(0, 1)
     private(set) var gravity: SIMD2<Double> = SIMD2(0, 1)
 
-    private var timer: Timer?
+    private var motionTask: Task<Void, Never>?
     private var startedAt: Date?
 
     func start() {
         startedAt = Date()
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+        motionTask?.cancel()
+        // Timer 대신 Task — Swift 6 strict concurrency 친화. cancel 로 stop 명확.
+        motionTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(1_000_000_000.0 / 30.0))
+                guard !Task.isCancelled else { return }
                 self?.advance()
             }
         }
     }
 
     func stop() {
-        timer?.invalidate()
-        timer = nil
+        motionTask?.cancel()
+        motionTask = nil
     }
 
     private func advance() {
