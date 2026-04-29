@@ -13,6 +13,7 @@ struct PouchShowcaseView: View {
     @State private var mix: PillMix = .mixed
     @State private var resetToken: Int = 0
     @State private var pills: [PillBody] = []
+    @State private var pouchState: PouchState = .sealed
 
     @State private var motionMode: MotionEngineMock.Mode = .auto
     @State private var manualGravityX: Double = 0
@@ -27,7 +28,7 @@ struct PouchShowcaseView: View {
             VStack(spacing: PPSpacing.md) {
                 Spacer()
                 PouchView(
-                    state: .sealed,
+                    state: $pouchState,
                     slot: slot,
                     pills: $pills,
                     gravity: motionEngine.gravity
@@ -89,6 +90,28 @@ struct PouchShowcaseView: View {
                 Button("Reset") {
                     resetToken &+= 1
                     regeneratePills()
+                    pouchState = .sealed
+                }
+                .font(PPFont.caption)
+                .buttonStyle(.bordered)
+            }
+
+            HStack(spacing: PPSpacing.sm) {
+                Text("Tear: \(tearStateLabel)")
+                    .font(PPFont.caption)
+                    .foregroundStyle(PPColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button("찢기") {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.74)) {
+                        pouchState = .torn
+                    }
+                }
+                .font(PPFont.caption)
+                .buttonStyle(.bordered)
+                Button("봉합") {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                        pouchState = .sealed
+                    }
                 }
                 .font(PPFont.caption)
                 .buttonStyle(.bordered)
@@ -131,6 +154,14 @@ struct PouchShowcaseView: View {
     private func regeneratePills() {
         let bounds = PouchView.pillBounds(in: pouchSize)
         pills = PillBody.mock(count: Int(pillCount), mix: mix, bounds: bounds)
+    }
+
+    private var tearStateLabel: String {
+        switch pouchState {
+        case .sealed: "sealed"
+        case .tearing(let p): String(format: "tearing %.0f%%", p * 100)
+        case .torn: "torn"
+        }
     }
 
     private func updateManualGravity() {
