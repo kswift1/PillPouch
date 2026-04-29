@@ -79,8 +79,8 @@ final class MotionEngineMock: MotionEngineProtocol {
         switch mode {
         case .auto:
             let elapsed = Date().timeIntervalSince(startedAt ?? Date())
-            let angle = elapsed * (2 * .pi / 8.0) // 8초 주기
-            gravity = SIMD2(sin(angle) * 0.7, cos(angle) * 0.7 + 0.3)
+            let angle = elapsed * (2 * .pi / 4.0) // 4초 주기 — 활발한 데모
+            gravity = SIMD2(sin(angle), cos(angle) * 0.6 + 0.4)
         case .manual:
             gravity = manualGravity
         }
