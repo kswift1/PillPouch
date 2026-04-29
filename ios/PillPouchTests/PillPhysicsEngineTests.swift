@@ -223,9 +223,35 @@ import Foundation
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 10, dy: 0), radius: 22),
         ]
         PillPhysicsEngine.resolvePairCollisions(&pills)
-        // velocity 부호 그대로 유지 (impulse 적용 X)
+        // velocity 부호 그대로 유지 (impulse 적용 X). 수평 stack(nx=1)이라 stack-breaking 미적용.
         #expect(pills[0].velocity.dx == -10)
         #expect(pills[1].velocity.dx == 10)
+    }
+
+    @Test func 수직_stack시_horizontal_kick_부여() {
+        // 두 알약이 위/아래 stack — normal 이 거의 vertical (|nx|≈0).
+        // 위 알약(idx 0, y=100), 아래 알약(idx 1, y=120). minDist 26.4 < 20 → 침투.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 120), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills)
+        // 위/아래 알약 모두 dx 가 0 이 아니어야 함 (반대 부호로 nudge)
+        #expect(pills[0].velocity.dx != 0)
+        #expect(pills[1].velocity.dx != 0)
+        #expect((pills[0].velocity.dx * pills[1].velocity.dx) < 0)
+    }
+
+    @Test func 수평_정렬은_stack_breaking_미적용() {
+        // 수평 정렬 (nx=1) — stack breaking 조건(|nx|<0.3) 미충족.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 0, dy: 0), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 0, dy: 0), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills)
+        // velocity 변화 없음 (vRelN=0 이라 elastic 도 미적용, stack-breaking 도 미적용)
+        #expect(pills[0].velocity.dx == 0)
+        #expect(pills[1].velocity.dx == 0)
     }
 }
 
