@@ -298,6 +298,20 @@ import Foundation
         #expect(pills[0].velocity.dx == 0)
         #expect(pills[1].velocity.dx == 0)
     }
+
+    @Test func 대각_gravity_와_wall_aligned_stack도_catch() {
+        // gravity (1,1) 정규화 (0.707, 0.707). normal 수직(0,1)과 dot = 0.707.
+        // threshold 0.7 미만이 아니라 (0.7 <)이라 stack 으로 catch — corner 에 모인
+        // 알약이 wall 따라 vertical 또는 horizontal 정렬해도 nudge 발생.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 120), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(1, 1))
+        // nudge 발생 — 양쪽 모두 dx, dy 변화
+        #expect(pills[0].velocity.dx != 0 || pills[0].velocity.dy != 0)
+        #expect(pills[1].velocity.dx != 0 || pills[1].velocity.dy != 0)
+    }
 }
 
 @Suite struct PillPhysicsEngineRotationTests {
