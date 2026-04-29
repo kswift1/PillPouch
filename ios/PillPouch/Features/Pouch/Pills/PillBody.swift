@@ -21,7 +21,7 @@ struct PillBody: Identifiable, Equatable {
         id: UUID = UUID(),
         categoryKey: String,
         position: CGPoint,
-        radius: CGFloat = 16,
+        radius: CGFloat = 22,
         rotation: Double = 0
     ) {
         self.id = id
@@ -38,8 +38,8 @@ extension PillBody {
     static func mock(count: Int, mix: PillMix, bounds: CGRect) -> [PillBody] {
         guard count > 0 else { return [] }
 
-        let radius: CGFloat = 16
-        let spacing: CGFloat = 2
+        let radius: CGFloat = 22
+        let spacing: CGFloat = 3
         let cellSize = radius * 2 + spacing
 
         let cols = max(Int(bounds.width / cellSize), 1)

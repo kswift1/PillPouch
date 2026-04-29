@@ -242,3 +242,99 @@ docs: append Stage 2 redesign section to report
 ```
 
 ## 승인 ⛔ (재)
+
+---
+
+# 추가: Polish (리뷰 피드백 반영)
+
+## 트리거
+
+Stage 3 진입 전 작업지시자 시각 검토. 결함 4 + 1 식별:
+- C1: 라이트 알약 가시성 너무 약함
+- C2: 알약 사이즈 너무 작음
+- C3: 상단 heat seal serration 흐림
+- C4: perforation 점선 옅음
+- M2: 아침 도장만 사이즈가 다름
+
+## 변경
+
+### C1 — 라이트 알약 가시성
+- 봉지 라이트 fill opacity `0.78 → 0.65`
+- PillView blur `0.4 → 제거`, opacity `0.94 → 0.96`
+- 결과: 라이트에서도 알약 형태/색 식별 가능 (가설 B 강화)
+
+### C2 — 알약 사이즈
+- PillBody radius `16 → 22` (default + mock factory 둘 다)
+- mock spacing `2 → 3` (큰 알약끼리 약간 더 호흡)
+- 결과: frame 38pt → 53pt. 봉지 너비의 14% → 20%. 8개는 두 줄로 자동 배치.
+
+### C3 — 상단 heat seal serration
+- serration stroke lineWidth `0.7 → 1.0`
+- heatSealEdge opacity `0.65 → 0.85`
+- 결과: 상하단 톱니 모두 또렷
+
+### C4 — perforation 점선
+- perforationColor opacity `0.40 → 0.55`
+- 점선 lineWidth `0.7 → 0.9`
+- 결과: "여기 절취선" 시그널 강화
+
+### M2 — 아침 도장 사이즈 정규화 (자산 처리)
+원인 진단:
+
+| 자산 | trimmed | 캔버스 비율 |
+|---|---|---|
+| 아침 (원본) | 892×897 | 71% (작음) |
+| 점심 (원본) | 1015×1033 | 80% |
+| 저녁 (원본) | 1022×1060 | 81% |
+
+자산 자체가 캔버스 안에서 아침만 13% 작게 그려져 있음. SwiftUI `.scaledToFit()` + 동일 frame이라 시각 사이즈 차이 발생.
+
+수정: ImageMagick 으로 3개 자산 모두 trim → 1024×1024 resize → 1280×1280 캔버스 중앙 배치 → 모든 도장 trimmed ~1024px로 균일화.
+
+```bash
+magick "Slot{Morning,Lunch,Evening}.imageset/slot_*.png" \
+  -trim +repage -resize 1024x1024 \
+  -gravity center -background none -extent 1280x1280 \
+  "$src"
+```
+
+결과: 3개 도장 모두 동일한 visual size로 표시. 코드 변경 0.
+
+## 검증
+
+### 빌드
+```
+** BUILD SUCCEEDED **
+```
+
+### 스크린샷 갱신 (8장)
+- `sealed-{morning,lunch,evening}-{light,dark}.png` (6장) — 도장 정규화 + perforation/heat seal 강화 반영
+- `pills-mixed.png` + `pills-mixed-dark.png` — 알약 사이즈/가시성 fix
+- `pills-vitamins-8.png` — 큰 알약으로 두 줄 배치
+
+### 비교 (Polish 전/후)
+
+| 항목 | 전 | 후 |
+|---|---|---|
+| 라이트 알약 가시성 | "흐릿한 얼룩" | **각 형태 명확 식별** |
+| 알약 차지 영역 | 봉지 너비 14% | **봉지 너비 20%** |
+| 상단 heat seal | 흐릿 | **또렷한 톱니** |
+| perforation 점선 | 거의 안 보임 | **명확한 dashed** |
+| 아침 도장 vs 점심/저녁 | 13% 작음 | **균일** |
+
+## 보류
+
+| 항목 | 사유 |
+|---|---|
+| M1 봉지 비율 (세로형 vs 가로형) | 띠 task에서 결정 |
+| M3 봉지 그림자 강화 | 작업지시자 보류 |
+
+## 추가 커밋
+
+```
+fix(ios): boost light pouch translucency and pill size for visibility (#25 polish)
+chore(assets): normalize slot stamp asset canvas sizes
+docs: append polish section to Stage 2 report
+```
+
+## 승인 ⛔ (3차) — Stage 3 진입 전 최종 게이트

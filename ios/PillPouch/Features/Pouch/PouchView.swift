@@ -17,8 +17,7 @@ struct PouchView: View {
             ForEach(pills) { pill in
                 PillView(pill: pill)
             }
-            .blur(radius: 0.4)
-            .opacity(0.94)
+            .opacity(0.96)
             PouchPaperLayer(slot: slot)
         }
     }

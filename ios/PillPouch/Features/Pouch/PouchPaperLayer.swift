@@ -65,7 +65,7 @@ struct PouchPaperLayer: View {
                     .fill(heatSealFill)
                     .frame(height: Const.topSealHeight)
                 serration(width: geo.size.width, facingDown: true)
-                    .stroke(heatSealEdge, lineWidth: 0.7)
+                    .stroke(heatSealEdge, lineWidth: 1.0)
                     .frame(width: geo.size.width, height: Const.serrationAmplitude)
                     .offset(y: Const.topSealHeight - Const.serrationAmplitude / 2)
             }
@@ -81,7 +81,7 @@ struct PouchPaperLayer: View {
                     .fill(heatSealFill)
                     .frame(height: Const.bottomSealHeight)
                 serration(width: geo.size.width, facingDown: false)
-                    .stroke(heatSealEdge, lineWidth: 0.7)
+                    .stroke(heatSealEdge, lineWidth: 1.0)
                     .frame(width: geo.size.width, height: Const.serrationAmplitude)
                     .offset(y: -Const.bottomSealHeight + Const.serrationAmplitude / 2)
             }
@@ -122,7 +122,7 @@ struct PouchPaperLayer: View {
                 path.addLine(to: CGPoint(x: geo.size.width - inset, y: y))
             }
             .stroke(perforationColor,
-                    style: StrokeStyle(lineWidth: 0.7, dash: [3, 3]))
+                    style: StrokeStyle(lineWidth: 0.9, dash: [3, 3]))
         }
         .allowsHitTesting(false)
     }
@@ -166,7 +166,7 @@ struct PouchPaperLayer: View {
     private var bodyFill: Color {
         scheme == .dark
             ? Color(red: 0.85, green: 0.83, blue: 0.78).opacity(0.18)
-            : Color(red: 0.99, green: 0.98, blue: 0.96).opacity(0.78)
+            : Color(red: 0.99, green: 0.98, blue: 0.96).opacity(0.65)
     }
     private var bodyOutline: Color {
         scheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.06)
@@ -186,11 +186,11 @@ struct PouchPaperLayer: View {
     }
     private var heatSealEdge: Color {
         scheme == .dark
-            ? Color(red: 0.36, green: 0.34, blue: 0.31).opacity(0.65)
-            : Color(red: 0.72, green: 0.68, blue: 0.60).opacity(0.65)
+            ? Color(red: 0.36, green: 0.34, blue: 0.31).opacity(0.85)
+            : Color(red: 0.72, green: 0.68, blue: 0.60).opacity(0.85)
     }
 
-    private var perforationColor: Color { PPColor.textSecondary.opacity(0.40) }
+    private var perforationColor: Color { PPColor.textSecondary.opacity(0.55) }
 
     private var headerPrimaryColor: Color { PPColor.textPrimary.opacity(0.55) }
     private var headerSecondaryColor: Color { PPColor.textSecondary.opacity(0.55) }
