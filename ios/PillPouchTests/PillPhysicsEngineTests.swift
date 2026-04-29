@@ -109,30 +109,30 @@ import Foundation
 
     @Test func 좌측_벽_침범시_안쪽으로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -50, dy: 0), radius: 22)]
-        // collision 이전 r = radius * 0.5 = 11. position.x - r = -6 < bounds.minX(0).
+        // collision r = radius * 0.9 = 19.8. position.x - r = -14.8 < bounds.minX(0).
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(pills[0].position.x == 11)  // bounds.minX + r
+        #expect(abs(pills[0].position.x - 19.8) < 0.001)  // bounds.minX + r
         #expect(pills[0].velocity.dx == 15) // -(-50) * 0.3 = 15 (반사 + 30% 감쇠)
     }
 
     @Test func 우측_벽_침범시_안쪽으로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 195, y: 100), velocity: .init(dx: 50, dy: 0), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(pills[0].position.x == 189) // bounds.maxX - r = 200 - 11
-        #expect(pills[0].velocity.dx == -15) // -50 * 0.3 = -15
+        #expect(abs(pills[0].position.x - 180.2) < 0.001) // bounds.maxX - r = 200 - 19.8
+        #expect(pills[0].velocity.dx == -15)
     }
 
     @Test func 하단_벽_침범시_위로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(pills[0].position.y == 389) // bounds.maxY - r
+        #expect(abs(pills[0].position.y - 380.2) < 0.001) // bounds.maxY - r
         #expect(pills[0].velocity.dy == -15)
     }
 
     @Test func 상단_벽_침범시_아래로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 5), velocity: .init(dx: 0, dy: -50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(pills[0].position.y == 11) // bounds.minY + r
+        #expect(abs(pills[0].position.y - 19.8) < 0.001) // bounds.minY + r
         #expect(pills[0].velocity.dy == 15)
     }
 
@@ -146,10 +146,10 @@ import Foundation
     }
 
     @Test func 지속_중력_장시간_시뮬레이션_후_바닥_위에_정착() {
-        // gScale 90 + damping 0.92 조합의 terminal velocity ~18.75pt/s.
-        // 시작 350 (바닥에서 39pt 위) + 30초 시뮬로 정착 확인.
-        var pills = [PillBody(categoryKey: "lutein", position: .init(x: 100, y: 350), radius: 22)]
-        for _ in 0 ..< 1800 {
+        // gScale 250 + damping 0.92 조합의 terminal velocity ~52pt/s.
+        // restitution 0.3 으로 첫 바닥 충돌 후 살짝 튀어오름 — 정착까지 10초 시뮬.
+        var pills = [PillBody(categoryKey: "lutein", position: .init(x: 100, y: 100), radius: 22)]
+        for _ in 0 ..< 600 {
             PillPhysicsEngine.tick(
                 dt: 1.0 / 60.0,
                 gravity: SIMD2(0, 1),
@@ -157,9 +157,9 @@ import Foundation
                 pills: &pills
             )
         }
-        // 알약은 봉지 바닥(maxY - r = 389) 부근에 정착
-        #expect(pills[0].position.y > 380)
-        #expect(pills[0].position.y <= 389)
+        // 알약은 봉지 바닥(maxY - r = 380.2) 부근에 정착
+        #expect(pills[0].position.y > 370)
+        #expect(pills[0].position.y <= 381)
     }
 }
 
