@@ -109,30 +109,30 @@ import Foundation
 
     @Test func 좌측_벽_침범시_안쪽으로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -50, dy: 0), radius: 22)]
-        // collision r = radius * 0.9 = 19.8. position.x - r = -14.8 < bounds.minX(0).
+        // collision r = radius * 0.6 = 13.2. position.x - r = -8.2 < bounds.minX(0).
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(abs(pills[0].position.x - 19.8) < 0.001)  // bounds.minX + r
+        #expect(abs(pills[0].position.x - 13.2) < 0.001)  // bounds.minX + r
         #expect(pills[0].velocity.dx == 15) // -(-50) * 0.3 = 15 (반사 + 30% 감쇠)
     }
 
     @Test func 우측_벽_침범시_안쪽으로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 195, y: 100), velocity: .init(dx: 50, dy: 0), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(abs(pills[0].position.x - 180.2) < 0.001) // bounds.maxX - r = 200 - 19.8
+        #expect(abs(pills[0].position.x - 186.8) < 0.001) // bounds.maxX - r = 200 - 13.2
         #expect(pills[0].velocity.dx == -15)
     }
 
     @Test func 하단_벽_침범시_위로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(abs(pills[0].position.y - 380.2) < 0.001) // bounds.maxY - r
+        #expect(abs(pills[0].position.y - 386.8) < 0.001) // bounds.maxY - r
         #expect(pills[0].velocity.dy == -15)
     }
 
     @Test func 상단_벽_침범시_아래로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 5), velocity: .init(dx: 0, dy: -50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
-        #expect(abs(pills[0].position.y - 19.8) < 0.001) // bounds.minY + r
+        #expect(abs(pills[0].position.y - 13.2) < 0.001) // bounds.minY + r
         #expect(pills[0].velocity.dy == 15)
     }
 
@@ -157,9 +157,9 @@ import Foundation
                 pills: &pills
             )
         }
-        // 알약은 봉지 바닥(maxY - r = 380.2) 부근에 정착
-        #expect(pills[0].position.y > 370)
-        #expect(pills[0].position.y <= 381)
+        // 알약은 봉지 바닥(maxY - r = 386.8) 부근에 정착
+        #expect(pills[0].position.y > 380)
+        #expect(pills[0].position.y <= 387)
     }
 }
 
@@ -226,5 +226,51 @@ import Foundation
         // velocity 부호 그대로 유지 (impulse 적용 X)
         #expect(pills[0].velocity.dx == -10)
         #expect(pills[1].velocity.dx == 10)
+    }
+}
+
+@Suite struct PillPhysicsEngineRotationTests {
+    @Test func angularVelocity가_매_tick_rotation에_누적된다() {
+        var pills = [PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22, angularVelocity: 60)]
+        PillPhysicsEngine.tick(
+            dt: 1.0 / 60.0,
+            gravity: SIMD2(0, 0),
+            bounds: CGRect(x: 0, y: 0, width: 1000, height: 1000),
+            pills: &pills
+        )
+        // rotation += 60 * (1/60) = 1.0 (deg)
+        #expect(abs(pills[0].rotation - 1.0) < 0.001)
+    }
+
+    @Test func angularDamping이_angularVelocity를_감쇠시킨다() {
+        var pills = [PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22, angularVelocity: 100)]
+        PillPhysicsEngine.tick(
+            dt: 1.0 / 60.0,
+            gravity: SIMD2(0, 0),
+            bounds: CGRect(x: 0, y: 0, width: 1000, height: 1000),
+            pills: &pills
+        )
+        // 100 * 0.95 = 95
+        #expect(abs(pills[0].angularVelocity - 95) < 0.001)
+    }
+
+    @Test func 좌측_벽_충돌시_y_velocity가_angular에_기여() {
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -50, dy: 30), radius: 22)]
+        PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
+        // 좌측 벽: angularVelocity += dy * wallSpinTransfer = 30 * 0.6 = 18
+        #expect(abs(pills[0].angularVelocity - 18) < 0.001)
+    }
+
+    @Test func 스쳐_지나가는_충돌시_양쪽_반대_부호_spin() {
+        // 두 알약이 normal 따라 정면 충돌 X — tangent 방향으로 상대 이동
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 0, dy: 50), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 0, dy: -50), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills)
+        // tangent 방향 상대 속도가 있으니 양쪽 angular 반대 부호
+        #expect(pills[0].angularVelocity != 0)
+        #expect(pills[1].angularVelocity != 0)
+        #expect((pills[0].angularVelocity * pills[1].angularVelocity) < 0)
     }
 }
