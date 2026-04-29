@@ -68,9 +68,10 @@ final class MotionEngineMock: MotionEngineProtocol {
         startedAt = Date()
         motionTask?.cancel()
         // Timer 대신 Task — Swift 6 strict concurrency 친화. cancel 로 stop 명확.
+        // 30Hz tick: 1/30 초마다 advance (이전 Timer.scheduledTimer interval 과 동일).
         motionTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(1_000_000_000.0 / 30.0))
+                try? await Task.sleep(for: .seconds(1.0 / 30.0))
                 guard !Task.isCancelled else { return }
                 self?.advance()
             }
