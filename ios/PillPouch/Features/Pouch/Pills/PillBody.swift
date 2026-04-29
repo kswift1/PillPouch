@@ -7,13 +7,15 @@ import SwiftUI
 
 /// 봉지 안 알약 1개의 데이터. 알약 시각은 PR #22로 머지된 카테고리 시드 자산을 그대로 사용 —
 /// categoryKey 가 형태/색/크기를 모두 결정. Categories 폴더는 namespace 미설정이라 `Image(categoryKey)` 로 직접 접근.
-/// Stage 2: 정적 위치. Stage 3: velocity/충돌 추가. Stage 5: isFalling 추가.
+/// Stage 2: 정적 위치 + Stage 3: velocity/충돌 추가. Stage 5: isFalling 추가.
 struct PillBody: Identifiable, Equatable {
     let id: UUID
     /// `Supplement.categoryKey` 와 매핑되는 lowerCamel id. `Categories/{key}` Asset Catalog 키와 1:1.
     var categoryKey: String
     var position: CGPoint
-    /// 시각 frame 의 절반. `frame = radius * 2 * sizeMultiplier` 로 표시.
+    /// 픽셀/초 (pt/s). Stage 3 물리 엔진이 매 tick 갱신.
+    var velocity: CGVector
+    /// 시각 frame 의 절반. `frame = radius * 2 * sizeMultiplier` 로 표시. 충돌 반지름.
     var radius: CGFloat
     var rotation: Double
 
@@ -21,12 +23,14 @@ struct PillBody: Identifiable, Equatable {
         id: UUID = UUID(),
         categoryKey: String,
         position: CGPoint,
+        velocity: CGVector = .zero,
         radius: CGFloat = 22,
         rotation: Double = 0
     ) {
         self.id = id
         self.categoryKey = categoryKey
         self.position = position
+        self.velocity = velocity
         self.radius = radius
         self.rotation = rotation
     }
