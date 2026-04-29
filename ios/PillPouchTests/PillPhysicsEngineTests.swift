@@ -257,8 +257,23 @@ import Foundation
     @Test func 좌측_벽_충돌시_y_velocity가_angular에_기여() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -50, dy: 30), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
-        // 좌측 벽: angularVelocity += dy * wallSpinTransfer = 30 * 0.6 = 18
-        #expect(abs(pills[0].angularVelocity - 18) < 0.001)
+        // 좌측 벽: angularVelocity += preDy * wallSpinTransfer = 30 * 1.5 = 45
+        #expect(abs(pills[0].angularVelocity - 45) < 0.001)
+    }
+
+    @Test func 우측_벽_충돌시_y_velocity가_반대_부호_spin() {
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 195, y: 100), velocity: .init(dx: 50, dy: 30), radius: 22)]
+        PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
+        // 우측 벽: angularVelocity -= preDy * wallSpinTransfer = -45
+        #expect(abs(pills[0].angularVelocity - (-45)) < 0.001)
+    }
+
+    @Test func 강한_충돌에서도_pre_velocity_spin_유지() {
+        // reflection 후 dy 는 0.3 비율로 감쇠되지만, spin은 pre-velocity 기준이라 강한 충돌에서도 강함.
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -200, dy: 100), radius: 22)]
+        PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
+        // angular = 100 * 1.5 = 150 (pre dy 100). post-velocity 사용했으면 100 * 0.3 = 30 만 나옴.
+        #expect(abs(pills[0].angularVelocity - 150) < 0.001)
     }
 
     @Test func 스쳐_지나가는_충돌시_양쪽_반대_부호_spin() {
