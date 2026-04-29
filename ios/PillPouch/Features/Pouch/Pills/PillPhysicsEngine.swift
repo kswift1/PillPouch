@@ -11,15 +11,16 @@ import Foundation
 /// '살짝' 흔들림이 목표라 G_SCALE은 실 중력의 ~1/30 수준.
 enum PillPhysicsEngine {
     /// 중력 가속도 스케일 (pt/s²). terminal velocity ≈ gScale * dt / (1 - damping).
-    /// 1000이면 gravity=1.0 에서 terminal ~208pt/s, gravity=0.5(일상 기울임)에서도 ~104pt/s
-    /// — 봉지 가로(~240pt)를 1~2초에 가로지름.
-    static let gScale: Double = 1000
+    /// 1500 + damping 0.95 면 gravity=1.0 에서 terminal ~500pt/s, gravity=0.5 에서 ~250pt/s
+    /// — 봉지 가로(~240pt) 를 0.5~1초 안에 가로지름.
+    static let gScale: Double = 1500
 
-    /// 매 tick 적용되는 속도 감쇠 (1보다 작음). 1초당 0.92 ^ 60 ≈ 0.007 → 정지.
-    static let damping: Double = 0.92
+    /// 매 tick 적용되는 속도 감쇠 (1보다 작음). 0.95 ^ 60 ≈ 0.046 → 1초면 사실상 정지.
+    static let damping: Double = 0.95
 
     /// 벽 충돌 시 반사 계수 (0~1). 0 = 정지, 1 = 완전 탄성.
-    static let restitution: CGFloat = 0.3
+    /// 0.2 면 bounce 작게 — 부딪히고 안정. 약봉지 안 알약 거동에 정합.
+    static let restitution: CGFloat = 0.2
 
     /// 알약 간 충돌 시 position push-apart 비율 (1.0 = 한 번에 완전 분리).
     static let pairSeparation: CGFloat = 1.0
@@ -34,16 +35,21 @@ enum PillPhysicsEngine {
     /// 큰 overlap에서 안정 분리를 위한 pair collision iteration 횟수.
     static let pairCollisionIterations: Int = 2
 
-    /// 매 tick 회전 감쇠. 0.95 ^ 60 ≈ 0.046 — 1초 후 사실상 정지.
-    static let angularDamping: Double = 0.95
+    /// 매 tick 회전 감쇠. 0.80 ^ 60 ≈ 1e-6 — 0.5초 안에 사실상 정지.
+    /// translation damping 0.95 보다 강함 — 자유 비행 알약은 회전 거의 즉시 죽음.
+    static let angularDamping: Double = 0.80
 
-    /// pair collision 시 tangential relative velocity → angular velocity 변환 계수 (deg/s per pt/s).
-    /// 2.5 면 100pt/s 스침에서 250 deg/s 스핀.
-    static let pairSpinTransfer: Double = 2.5
+    /// pair collision 시 tangential relative velocity → angular velocity 변환 계수.
+    /// 0.3 으로 약하게 — 충돌 시 살짝만 회전 부여, 뺑글뺑글 누적 방지.
+    static let pairSpinTransfer: Double = 0.3
 
-    /// bounds collision 시 벽 평행 velocity → angular velocity (벽 따라 미끄러져 굴러가는 효과).
-    /// reflection 전 velocity 기준이라 강한 충돌에서도 spin 명확.
-    static let wallSpinTransfer: Double = 1.5
+    /// 벽 contact 시 매 tick angular velocity 가 target ω = v_tangent / r 로 수렴하는 비율.
+    /// rolling-without-slipping 모델 — 알약이 벽 따라 굴러갈 때만 회전 발생.
+    /// 0.3 = 매 tick 30% target 으로 lerp.
+    static let wallSpinLerp: Double = 0.3
+
+    /// 벽 contact 검사 epsilon (pt). 침범 후 reflect 로 정확히 벽에 붙은 알약 검출.
+    static let wallContactEpsilon: CGFloat = 1.0
 
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
@@ -92,30 +98,55 @@ enum PillPhysicsEngine {
     // MARK: - Collisions
 
     /// 봉지 내부 사각 영역 충돌. 모서리는 단순 AABB로 근사.
-    /// 벽과 평행한 velocity 성분(반사 전)은 angular velocity 에 기여 (벽 따라 굴러가는 효과).
-    /// 반사 후 velocity 로 계산하면 강한 충돌일수록 spin 이 작아지는 비대칭 발생 — pre-velocity 사용.
+    /// 1) 침범 시 position 클램프 + velocity 반사
+    /// 2) Contact 인 동안 매 tick ω 를 v_tangent / r 로 lerp (rolling-without-slipping)
+    /// 회전은 벽 contact 가 지속되는 동안만 발생. 자유 비행은 angularDamping 으로 즉시 죽음.
     static func resolveBoundsCollision(_ pills: inout [PillBody], in bounds: CGRect) {
+        let toDeg = 180.0 / .pi
+
         for i in pills.indices {
             let r = pills[i].radius * collisionRadiusRatio
-            let preDx = pills[i].velocity.dx
-            let preDy = pills[i].velocity.dy
+
+            // 1) 침범 처리
             if pills[i].position.x - r < bounds.minX {
                 pills[i].position.x = bounds.minX + r
-                pills[i].velocity.dx = -preDx * restitution
-                pills[i].angularVelocity += Double(preDy) * wallSpinTransfer
+                pills[i].velocity.dx = -pills[i].velocity.dx * restitution
             } else if pills[i].position.x + r > bounds.maxX {
                 pills[i].position.x = bounds.maxX - r
-                pills[i].velocity.dx = -preDx * restitution
-                pills[i].angularVelocity -= Double(preDy) * wallSpinTransfer
+                pills[i].velocity.dx = -pills[i].velocity.dx * restitution
             }
             if pills[i].position.y - r < bounds.minY {
                 pills[i].position.y = bounds.minY + r
-                pills[i].velocity.dy = -preDy * restitution
-                pills[i].angularVelocity -= Double(preDx) * wallSpinTransfer
+                pills[i].velocity.dy = -pills[i].velocity.dy * restitution
             } else if pills[i].position.y + r > bounds.maxY {
                 pills[i].position.y = bounds.maxY - r
-                pills[i].velocity.dy = -preDy * restitution
-                pills[i].angularVelocity += Double(preDx) * wallSpinTransfer
+                pills[i].velocity.dy = -pills[i].velocity.dy * restitution
+            }
+
+            // 2) Contact rolling
+            let onLeft   = pills[i].position.x - r <= bounds.minX + wallContactEpsilon
+            let onRight  = pills[i].position.x + r >= bounds.maxX - wallContactEpsilon
+            let onTop    = pills[i].position.y - r <= bounds.minY + wallContactEpsilon
+            let onBottom = pills[i].position.y + r >= bounds.maxY - wallContactEpsilon
+
+            // target ω = v_tangent / radius (시각 반지름 사용 — 시각상 굴러가는 속도 일치)
+            // 부호: 좌측벽+dy>0 → 시계방향(+), 우측벽+dy>0 → 반시계(-),
+            //       하단+dx>0 → 시계(+), 상단+dx>0 → 반시계(-)
+            var targetOmega: Double? = nil
+            if onLeft {
+                targetOmega = Double(pills[i].velocity.dy) / Double(pills[i].radius) * toDeg
+            } else if onRight {
+                targetOmega = -Double(pills[i].velocity.dy) / Double(pills[i].radius) * toDeg
+            }
+            if onBottom {
+                // 좌/우 + 하단 corner contact 시 하단이 우선 — 봉지 바닥 굴러가는 게 시각 dominant
+                targetOmega = Double(pills[i].velocity.dx) / Double(pills[i].radius) * toDeg
+            } else if onTop {
+                targetOmega = -Double(pills[i].velocity.dx) / Double(pills[i].radius) * toDeg
+            }
+
+            if let target = targetOmega {
+                pills[i].angularVelocity += (target - pills[i].angularVelocity) * wallSpinLerp
             }
         }
     }
