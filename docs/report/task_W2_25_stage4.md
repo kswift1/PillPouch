@@ -167,3 +167,119 @@ docs: add Stage 4 report
 - 봉지 위 조각이 살짝 매달려 흔들리는 효과 (선택)
 
 ## 승인 ⛔
+
+---
+
+# 추가: Polish — Lift redesign / Jagged mask / Progress hold / Gap 제거
+
+## 트리거
+
+작업지시자 시뮬 검증 4 사이클 — 원래 zigzag 만 그어진 시각이 약했고 이후
+실 약봉지 톤까지 보강. 최종적으로 lift 단일 모드만 남김.
+
+## 변경 (4 사이클)
+
+### 1) Lift / Gap 두 스타일 비교 (commit `93b937c`)
+
+기존 single-line zigzag 가 약함. 두 가지 시각 비교용으로 추가:
+- `TearStyle.lift`: 봉지 위쪽 조각 mask + transform (PaperLayer 복제본 위쪽만 잘라 transform)
+- `TearStyle.gap`: perforation 라인에 어두운 rect 가 좌→우 점진적 확대
+- ShowcaseView Picker (segmented) 토글
+
+### 2) Approach A 채택: PaperLayer 자체 분리 (commit `0c7722e`)
+
+작업지시자 결정 — Approach B (PaperLayer 복제본) 는 본체와 복제본이 이중
+그리기로 들린 자리에 본체 위쪽이 그대로 보임 → 진정한 분리 X.
+
+A 적용:
+- `PouchPaperTop` / `PouchPaperBottom` wrapper view 신규
+- 각자 PaperLayer 그리고 horizontal Rectangle mask 로 위/아래만 노출
+- PouchView: lift 모드 → PaperBottom + PaperTop(transform) 두 조각.
+  gap 모드 → 단일 PaperLayer.
+- 위쪽 transform: progress * 8pt offset + progress * 6° rotation + 0~0.20 shadow
+- PouchTearLayer.liftView 단순화 (본체 측 jagged edge 만)
+
+이제 위쪽 조각이 들리면 그 자리에 알약 영역 노출 — 진짜 분리감.
+
+### 3) Jagged mask + interlocking 단면 (commit `a5423c6`)
+
+기존 mask 가 직선 + 위에 zigzag stroke 만. "찢어졌다" 가 시각으로 안 와닿음
++ 위/아래 단면 mismatch.
+
+해결:
+- `JaggedTearPath` Shape — seeded RNG 기반 무작위 jagged path
+  - `periodJitter 0.6~1.4` + `ampJitter 0.35~1.30` + alternating direction
+  - progress 비율만큼 좌→우 진행, 나머지는 perforation Y 직선
+  - `region: .top/.bottom` 으로 위/아래 mask 영역 결정
+- `JaggedRNG` (xorshift) — deterministic, 매 frame 같은 path → flicker X
+- `PouchPaperSplit.tearSeed` 공유 — PaperTop/Bottom 동일 seed → 단면 정확히 맞물림
+- PaperTop/Bottom 의 mask 를 horizontal Rectangle → JaggedTearPath 로 교체
+- PouchTearLayer.liftView 빈 view (mask 가 시각 표현)
+
+### 4) Progress hold + resume (commit `9e97309`)
+
+50% 임계 snap 이 어색 — 30% drag 후 손 떼면 0% 로 점프 (확 줄어듦) 또는
+50% 넘으면 100% 로 점프 (확 찢김).
+
+해결:
+- 50% 임계 폐기. snap-back / auto-torn 제거.
+- `dragBaseProgress` State 추가 — 새 drag 의 시작 progress base
+- `handleTearChanged`: `progress = clamp(dragBaseProgress + dragDelta)`.
+  100% 도달 시에만 자동 .torn (success haptic + spring)
+- `handleTearEnded`: 진행도 유지, dragBaseProgress 만 갱신 (다음 drag 의 base)
+- `onChange(of: state)`: 외부 .sealed/.torn 변경 (Showcase 버튼) 시 base 동기화.
+  drag 중 .tearing 갱신은 자기 자신이라 무시.
+
+이제 30% 까지 찢고 손 떼면 30% 유지, 다시 drag 하면 30% 부터 이어짐.
+
+### 5) Gap 제거 (commit `2edee29`)
+
+작업지시자 결정 — lift 단일 모드만 채택.
+
+- TearStyle enum, .gap case, gapView, ZigZagEdge Shape 제거
+- PouchTearLayer view 자체 제거 (mask 가 시각 표현 — view 불필요)
+- PouchTearLayer.swift 는 JaggedTearPath + JaggedRNG 만 보유
+- PouchView: tearStyle props 제거, paperLayerStack 단순화 (항상 PaperBottom + PaperTop transform)
+- ShowcaseView: tearStyle State + Picker 제거
+
+3 files / 10 insertions / **169 deletions**.
+
+## 검증
+
+```
+xcodebuild -scheme PillPouch -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4' build
+** BUILD SUCCEEDED **
+```
+
+기존 PillPhysicsEngine 25/25 테스트 그대로 통과. Stage 4 신규 unit test 없음
+(gesture / mask 시각은 UI 영역).
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| Approach A (PaperLayer 분리) | 채택 | B 의 이중 그리기로 들린 자리에 본체 보임 — 진정한 분리 X |
+| `wallContactEpsilon` 같은 mask path | seeded 동일 jagged | 위/아래 단면 정확히 맞물림 |
+| `tearSeed` `0xC0FFEE_BEEF` | fixed | 매 봉지 동일 jagged. 봉지마다 다른 패턴 원하면 supplement.id 기반 변경 가능 |
+| Jagged `basePeriod 6` / `baseAmp 3.5` | 현재 폭/높이 | 너무 세밀하면 노이즈, 너무 크면 만화 |
+| `periodJitter 0.6~1.4` / `ampJitter 0.35~1.30` | 무작위 강도 | 좁히면 규칙적, 넓히면 들쭉날쭉 |
+| 50% snap 폐기 | progress hold | drag 끝나도 진행도 유지 — 사용자 의도와 정합 |
+| 100% 자동 .torn + success haptic | drag 중 trigger | 명시적 완료 — sealed 로 가는 건 봉합 버튼 (또는 Today 의 toast 등) |
+| Gap 제거 | lift 단일 | 비교 결과 lift 채택 — 코드 단순화 |
+
+## 누적 커밋 (Stage 4 전체)
+
+```
+5fd0201 feat(ios): add PouchTearLayer with progressive zigzag along perforation (#25 stage4)
+f052f75 feat(ios): wire tear DragGesture into PouchView with 50% threshold and haptics (#25 stage4)
+8cbf75f feat(ios): add tear/seal debug buttons to Showcase (#25 stage4)
+c1e2184 docs: add Stage 4 report (#25 stage4)
+93b937c feat(ios): add Lift/Gap tear styles for visual comparison (#25 stage4 redesign)
+0c7722e refactor(ios): split PaperLayer into top/bottom for true tear separation (#25 stage4 approach A)
+a5423c6 feat(ios): replace regular zigzag with seeded random jagged tear edge (#25 stage4 jagged mask)
+9e97309 feat(ios): keep tear progress on drag end and resume from where left off (#25 stage4 progress hold)
+2edee29 refactor(ios): remove gap tear style and PouchTearLayer view (#25 stage4 cleanup)
+```
+
+## 승인 ⛔ (재) — Stage 4 최종
