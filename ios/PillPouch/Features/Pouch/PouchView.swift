@@ -21,6 +21,8 @@ struct PouchView: View {
     @State private var lastTickDate: Date?
     @State private var haptics = PouchHapticDriver()
     @State private var lastTearHapticStep: Int = 0
+    /// 새 drag 시작 시점의 progress base. drag end 또는 외부 state 변경 시 갱신.
+    @State private var dragBaseProgress: Double = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -39,8 +41,12 @@ struct PouchView: View {
                 .onChange(of: context.date) { _, newDate in
                     advancePhysics(to: newDate, bounds: bounds)
                 }
+                .onChange(of: state) { _, newState in
+                    syncDragBase(to: newState)
+                }
                 .onAppear {
                     haptics.prepare()
+                    syncDragBase(to: state)
                 }
             }
         }
@@ -102,36 +108,56 @@ struct PouchView: View {
         guard abs(value.startLocation.y - perforationY) <= Const.startHitTolerance else { return }
         if case .torn = state { return }
 
-        let progress = max(0, min(1, value.translation.width / max(width - Const.tearMargin * 2, 1)))
+        let usableWidth = max(width - Const.tearMargin * 2, 1)
+        let dragDelta = Double(value.translation.width) / Double(usableWidth)
+        let progress = max(0, min(1, dragBaseProgress + dragDelta))
+
         let step = Int(progress * 10)
         if step > lastTearHapticStep {
             haptics.playTearStep()
             lastTearHapticStep = step
         }
-        state = .tearing(progress: progress)
-    }
 
-    private func handleTearEnded(_ value: DragGesture.Value, width: CGFloat, perforationY: CGFloat) {
-        guard abs(value.startLocation.y - perforationY) <= Const.startHitTolerance else { return }
-        if case .torn = state { return }
-
-        let progress = max(0, min(1, value.translation.width / max(width - Const.tearMargin * 2, 1)))
-        if progress >= Const.tearThreshold {
+        if progress >= 1.0 {
             haptics.playTearSuccess()
             withAnimation(.spring(response: 0.32, dampingFraction: 0.74)) {
                 state = .torn
             }
         } else {
-            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
-                state = .sealed
-            }
+            state = .tearing(progress: progress)
         }
-        lastTearHapticStep = 0
+    }
+
+    private func handleTearEnded(_ value: DragGesture.Value, width: CGFloat, perforationY: CGFloat) {
+        guard abs(value.startLocation.y - perforationY) <= Const.startHitTolerance else { return }
+        // 진행도 유지 — auto snap (sealed/torn) 없음. 다음 drag 의 base 갱신만.
+        switch state {
+        case .sealed:
+            dragBaseProgress = 0
+        case .tearing(let p):
+            dragBaseProgress = p
+        case .torn:
+            dragBaseProgress = 1.0
+        }
+    }
+
+    /// 외부에서 state 가 바뀌면 (Showcase 봉합/찢기 버튼) drag base 와 햅틱 step 동기화.
+    /// drag 중에는 .tearing 갱신이 자기 자신 발생이므로 무시.
+    private func syncDragBase(to newState: PouchState) {
+        switch newState {
+        case .sealed:
+            dragBaseProgress = 0
+            lastTearHapticStep = 0
+        case .torn:
+            dragBaseProgress = 1.0
+            lastTearHapticStep = 10
+        case .tearing:
+            break
+        }
     }
 
     private enum Const {
         static let startHitTolerance: CGFloat = 20
-        static let tearThreshold: Double = 0.5
         static let tearMargin: CGFloat = 16
     }
 }
