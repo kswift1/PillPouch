@@ -11,8 +11,8 @@ import Foundation
 /// '살짝' 흔들림이 목표라 G_SCALE은 실 중력의 ~1/30 수준.
 enum PillPhysicsEngine {
     /// 중력 가속도 스케일 (pt/s²). terminal velocity ≈ gScale * dt / (1 - damping).
-    /// 250이면 terminal ~52 pt/s — 봉지(높이 280pt)를 약 1초에 가로지름.
-    static let gScale: Double = 250
+    /// 400이면 terminal ~83 pt/s — 봉지(높이 280pt)를 0.5초 안에 가로지름.
+    static let gScale: Double = 400
 
     /// 매 tick 적용되는 속도 감쇠 (1보다 작음). 1초당 0.92 ^ 60 ≈ 0.007 → 정지.
     static let damping: Double = 0.92
@@ -26,12 +26,22 @@ enum PillPhysicsEngine {
     /// 알약 간 충돌 시 velocity 교환 탄성 계수 (0~1). 0.7 = 탱탱한 알약 충돌.
     static let pairRestitution: CGFloat = 0.7
 
-    /// 시각 frame 대비 충돌 반지름 비율. 자산이 frame을 거의 가득 채우므로 0.9.
-    /// 0.5 면 충돌 반경이 시각 frame의 절반이라 시각상 겹쳐 보임.
-    static let collisionRadiusRatio: CGFloat = 0.9
+    /// 시각 frame 대비 충돌 반지름 비율. capsule 가로 자산은 시각 두께가 frame 의 ~50%.
+    /// 0.6 으로 두면 시각상 알약끼리 거의 닿은 상태에서 충돌. 1층-2층 여백 자연스러움.
+    static let collisionRadiusRatio: CGFloat = 0.6
 
     /// 큰 overlap에서 안정 분리를 위한 pair collision iteration 횟수.
     static let pairCollisionIterations: Int = 2
+
+    /// 매 tick 회전 감쇠. 0.95 ^ 60 ≈ 0.046 — 1초 후 사실상 정지.
+    static let angularDamping: Double = 0.95
+
+    /// pair collision 시 tangential relative velocity → angular velocity 변환 계수 (deg/s per pt/s).
+    /// 1.5 면 100pt/s 스침에서 150 deg/s 스핀.
+    static let pairSpinTransfer: Double = 1.5
+
+    /// bounds collision 시 벽 평행 velocity → angular velocity (벽 따라 미끄러져 굴러가는 효과).
+    static let wallSpinTransfer: Double = 0.6
 
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
@@ -49,6 +59,7 @@ enum PillPhysicsEngine {
             applyGravity(&pills[i], dt: dt, gravity: gravity)
             applyDamping(&pills[i])
             integratePosition(&pills[i], dt: dt)
+            integrateRotation(&pills[i], dt: dt)
         }
         resolveBoundsCollision(&pills, in: bounds)
         resolvePairCollisions(&pills)
@@ -71,25 +82,35 @@ enum PillPhysicsEngine {
         pill.position.y += pill.velocity.dy * CGFloat(dt)
     }
 
+    private static func integrateRotation(_ pill: inout PillBody, dt: TimeInterval) {
+        pill.rotation += pill.angularVelocity * dt
+        pill.angularVelocity *= angularDamping
+    }
+
     // MARK: - Collisions
 
     /// 봉지 내부 사각 영역 충돌. 모서리는 단순 AABB로 근사.
+    /// 벽과 평행한 velocity 성분은 angular velocity 에 기여 (벽 따라 굴러가는 효과).
     static func resolveBoundsCollision(_ pills: inout [PillBody], in bounds: CGRect) {
         for i in pills.indices {
             let r = pills[i].radius * collisionRadiusRatio
             if pills[i].position.x - r < bounds.minX {
                 pills[i].position.x = bounds.minX + r
                 pills[i].velocity.dx = -pills[i].velocity.dx * restitution
+                pills[i].angularVelocity += Double(pills[i].velocity.dy) * wallSpinTransfer
             } else if pills[i].position.x + r > bounds.maxX {
                 pills[i].position.x = bounds.maxX - r
                 pills[i].velocity.dx = -pills[i].velocity.dx * restitution
+                pills[i].angularVelocity -= Double(pills[i].velocity.dy) * wallSpinTransfer
             }
             if pills[i].position.y - r < bounds.minY {
                 pills[i].position.y = bounds.minY + r
                 pills[i].velocity.dy = -pills[i].velocity.dy * restitution
+                pills[i].angularVelocity -= Double(pills[i].velocity.dx) * wallSpinTransfer
             } else if pills[i].position.y + r > bounds.maxY {
                 pills[i].position.y = bounds.maxY - r
                 pills[i].velocity.dy = -pills[i].velocity.dy * restitution
+                pills[i].angularVelocity += Double(pills[i].velocity.dx) * wallSpinTransfer
             }
         }
     }
@@ -117,8 +138,15 @@ enum PillPhysicsEngine {
                     pills[j].position.x += nx * overlap
                     pills[j].position.y += ny * overlap
 
-                    // 1D elastic collision along normal (equal mass m=1).
-                    // J = -(1 + e) * v_rel · n / (1/m_i + 1/m_j) — 침투 중에만 적용.
+                    // tangential relative velocity → angular velocity (스쳐 지나갈 때 회전).
+                    // tangent = (-ny, nx) — normal을 시계방향 90° 회전. vRelN 가드 전 — 정확한
+                    // 스침(vRelN=0)에서도 회전이 발생하도록.
+                    let vRelT = (pills[j].velocity.dx - pills[i].velocity.dx) * Double(-ny)
+                              + (pills[j].velocity.dy - pills[i].velocity.dy) * Double(nx)
+                    pills[i].angularVelocity -= vRelT * pairSpinTransfer
+                    pills[j].angularVelocity += vRelT * pairSpinTransfer
+
+                    // 1D elastic collision along normal (equal mass m=1) — 침투 중에만 적용.
                     let vRelN = (pills[j].velocity.dx - pills[i].velocity.dx) * nx
                               + (pills[j].velocity.dy - pills[i].velocity.dy) * ny
                     guard vRelN < 0 else { continue }

@@ -17,7 +17,10 @@ struct PillBody: Identifiable, Equatable {
     var velocity: CGVector
     /// 시각 frame 의 절반. `frame = radius * 2 * sizeMultiplier` 로 표시. 충돌 반지름.
     var radius: CGFloat
+    /// 도(degree) 단위 누적 회전. PillView 가 `.rotationEffect(.degrees(rotation))` 으로 적용.
     var rotation: Double
+    /// 도/초 (deg/s). 충돌/벽 마찰로 부여, angularDamping 으로 감쇠.
+    var angularVelocity: Double
 
     init(
         id: UUID = UUID(),
@@ -25,7 +28,8 @@ struct PillBody: Identifiable, Equatable {
         position: CGPoint,
         velocity: CGVector = .zero,
         radius: CGFloat = 22,
-        rotation: Double = 0
+        rotation: Double = 0,
+        angularVelocity: Double = 0
     ) {
         self.id = id
         self.categoryKey = categoryKey
@@ -33,6 +37,7 @@ struct PillBody: Identifiable, Equatable {
         self.velocity = velocity
         self.radius = radius
         self.rotation = rotation
+        self.angularVelocity = angularVelocity
     }
 }
 
@@ -43,7 +48,7 @@ extension PillBody {
         guard count > 0 else { return [] }
 
         let radius: CGFloat = 22
-        let spacing: CGFloat = 3
+        let spacing: CGFloat = 1
         let cellSize = radius * 2 + spacing
 
         let cols = max(Int(bounds.width / cellSize), 1)
