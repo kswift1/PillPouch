@@ -720,3 +720,86 @@ docs: append Stage 3 polish v5 section
 ```
 
 ## 승인 ⛔ (6차)
+
+---
+
+# 추가: Polish v6 — Vertical Stack Breaking (좌우 spread)
+
+## 트리거
+
+작업지시자 6차 검증: gravity (0,1) 인 상태에서 알약 8개가 봉지 가운데 **세로 column** 으로 stack. 사용자 의도: "전체적으로 아래로 흘러야 함" — 봉지 바닥에 가로로 펼쳐져야.
+
+## 진단
+
+### Sphere-sphere 모델의 한계
+
+두 알약이 위/아래로 stack 되면 normal 이 거의 수직 `(0, 1)`. push apart 가 normal 방향(위/아래)으로만 작용 → **horizontal spread 0**. 매 collision 마다 위 알약을 위로, 아래 알약을 아래로 미는데, 아래는 바닥에 막혀 stack 무한 유지.
+
+실제 약봉지: 알약이 둥글지 않고 **길쭉** → stack 시 옆으로 미끄러짐. sphere 모델은 그게 안 됨.
+
+## 변경
+
+### 1) `resolvePairCollisions` 에 vertical stack breaking nudge 추가
+
+```swift
+if abs(nx) < verticalStackBreakingThreshold {  // 0.3
+    let upperIdx = pills[i].position.y < pills[j].position.y ? i : j
+    let lowerIdx = upperIdx == i ? j : i
+    let sign: CGFloat = (pills[upperIdx].id.hashValue & 1 == 0) ? 1 : -1
+    pills[upperIdx].velocity.dx += verticalStackBreakingNudge * sign  // 12
+    pills[lowerIdx].velocity.dx -= verticalStackBreakingNudge * sign
+}
+```
+
+- 부호: id hash 기반 deterministic. 절반 알약은 좌측, 절반은 우측으로 nudge → 자연스러운 좌우 분산
+- 매 tick stack 충돌 발생 → 점진적으로 column 무너지며 가로로 spread
+
+### 2) `PillBody.mock` 시작 미세 dx jitter
+
+```swift
+let dxJitter = CGFloat(((index &* 73) % 17) - 8)  // ±8 pt/s, deterministic
+velocity: CGVector(dx: dxJitter, dy: 0)
+```
+
+시작부터 알약마다 미세 horizontal velocity. gravity 적용 시 자연 spread.
+
+### 신규 상수
+
+| 상수 | 값 | 의미 |
+|---|---|---|
+| `verticalStackBreakingThreshold` | 0.3 | normal 의 |nx| 가 이 값 미만이면 vertical stack |
+| `verticalStackBreakingNudge` | 12 pt/s | 매 충돌 nudge magnitude |
+
+### 신규 테스트 2개
+
+| 케이스 | 검증 |
+|---|---|
+| `수직_stack시_horizontal_kick_부여` | 위/아래 stack 시 양쪽 dx 부호 반대로 변화 |
+| `수평_정렬은_stack_breaking_미적용` | nx=1 (수평) 일 때 dx 변화 X |
+
+기존 모든 테스트 통과 — 수평 정렬 케이스는 |nx|=1 > 0.3 이라 stack-breaking 미적용 확인.
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (27/27, 신규 2개)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| Threshold |nx|<0.3 | "거의 수직 stack" 정의. 17.5° 이하 angle. 더 크면 normal 수직성 약한 충돌도 stack-breaking 발동 → 부자연 |
+| Nudge magnitude 12 pt/s | 8 pt/s 시작 jitter 의 1.5배 | 충돌마다 강하게 분리 — column 빨리 깨짐. 너무 크면 격렬 |
+| 부호 결정 = id.hashValue & 1 | id 기반 deterministic | random 은 테스트 어려움. id hash 면 알약마다 일관된 분리 방향. 절반은 좌, 절반은 우 |
+| 시작 dx jitter ±8 pt/s | 미세 시작 운동량 | gravity 적용 시 자연 spread. damping 0.95 라 ~1초 후 거의 0 |
+
+## 추가 커밋
+
+```
+fix(ios): break vertical pill stack with id-based horizontal nudge (#25 stage3 polish v6)
+test(ios): cover stack-breaking nudge and horizontal-alignment guard
+docs: append Stage 3 polish v6 section
+```
+
+## 승인 ⛔ (7차)
