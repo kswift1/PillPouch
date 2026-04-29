@@ -915,3 +915,62 @@ docs: append Stage 3 polish v7 section
 ```
 
 ## 승인 ⛔ (8차)
+
+---
+
+# 추가: Polish v8 — 대각 Gravity + Corner Stack 보강
+
+## 트리거
+
+작업지시자 8차 검증: 정상 거동 OK 하지만 **대각선 gravity 시 알약이 살짝 서있는 경우** 발생.
+
+## 진단
+
+대각 gravity (예: 정규화 후 0.707, 0.707) 시 알약이 corner(우하단)에 모임. 일부 알약은:
+- 봉지 우측 벽 따라 vertical stack — normal `(0, ±1)`
+- 봉지 하단 벽 따라 horizontal stack — normal `(±1, 0)`
+
+이 wall-aligned stack 의 normal 과 대각 gravity 의 dot product = **0.707**. v7 threshold 0.95 미달 → **stack-breaking trigger 안 됨** → corner 에 column 형성.
+
+## 수정
+
+### Threshold 0.95 → 0.7
+
+cos 18° → cos 45°. 대각 gravity 에서 wall-aligned stack 도 catch (45° 이내).
+
+부작용 검토: 정상 충돌(예: 두 알약이 30° 오프셋)은 dot 0.85 정도라 trigger. nudge 18 적용. 큰 문제 X — nudge 가 작아 일반 충돌 거동 영향 미미.
+
+### Nudge 12 → 18
+
+corner 에 모인 알약 갯수가 많아 (8개 가능) spread 강도 더 필요. 기존 12 는 corner 환경에서 약함.
+
+### 신규 테스트 1개
+
+| 케이스 | 검증 |
+|---|---|
+| `대각_gravity_와_wall_aligned_stack도_catch` | gravity (1,1), normal (0,1) → dot 0.707 > 0.7 → nudge 발생 |
+
+기존 28개 통과 — `gravity_방향과_normal이_perpendicular면_stack_breaking_미적용` 은 dot=0 이라 0.7 미만, 미적용 그대로.
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (29/29)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| Threshold 0.7 (cos 45°) | wall-aligned stack catch 가능 | 0.95 는 대각 gravity 에서 wall-aligned stack 놓침. 0.5 이하면 정상 충돌도 trigger — 0.7 균형점 |
+| Nudge 18 | corner 모임 spread 강도 | 12 는 약함. 24 이상은 격렬한 튀기 |
+
+## 추가 커밋
+
+```
+fix(ios): loosen stack-breaking threshold and bump nudge for diagonal-gravity corner spread (#25 stage3 polish v8)
+test(ios): cover wall-aligned stack catching with diagonal gravity
+docs: append Stage 3 polish v8 section
+```
+
+## 승인 ⛔ (9차)
