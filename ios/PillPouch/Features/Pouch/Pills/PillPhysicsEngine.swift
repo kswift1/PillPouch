@@ -54,11 +54,13 @@ enum PillPhysicsEngine {
     /// pair collision normal 이 gravity 방향과 거의 평행하면 (|n · ĝ| > 이 값) stack 으로 간주.
     /// sphere-sphere 모델은 stack 시 perpendicular spread 가 안 일어나는데, 실제 약봉지 알약은
     /// 길쭉해 stack 시 미끄러져 옆으로 흩어짐. 이 case 에서 perpendicular nudge 부여.
-    /// 0.95 = gravity 와 normal 사이 각도 18° 이내 (어느 방향 gravity 든 일반화).
-    static let stackParallelDotThreshold: CGFloat = 0.95
+    /// 0.7 = gravity 와 normal 사이 각도 45° 이내. 대각 gravity 시 corner 에 모인 알약이
+    /// wall-aligned (수평/수직) stack 으로 정착해도 ±45° 이내라 catch 됨.
+    static let stackParallelDotThreshold: CGFloat = 0.7
 
     /// stack 시 upper 알약에 부여하는 perpendicular velocity 크기 (pt/s). 부호는 id hash 로 결정.
-    static let stackBreakingNudge: CGFloat = 12
+    /// 18 = corner 모임 spread 가 자연스럽게 일어날 강도.
+    static let stackBreakingNudge: CGFloat = 18
 
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
