@@ -170,7 +170,7 @@ import Foundation
             PillBody(categoryKey: "vitaminC", position: .init(x: 105, y: 100), radius: 22),
         ]
         let dist0 = pills[1].position.x - pills[0].position.x
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         let dist1 = pills[1].position.x - pills[0].position.x
         #expect(dist1 > dist0)
     }
@@ -181,7 +181,7 @@ import Foundation
             PillBody(categoryKey: "vitaminC", position: .init(x: 200, y: 100), radius: 22),
         ]
         let snapshot = pills.map(\.position)
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         #expect(pills[0].position == snapshot[0])
         #expect(pills[1].position == snapshot[1])
     }
@@ -189,7 +189,7 @@ import Foundation
     @Test func 한_개만_있으면_변화_없음() {
         var pills = [PillBody(categoryKey: "omega3", position: .init(x: 100, y: 100), radius: 22)]
         let snapshot = pills[0]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         #expect(pills[0].position == snapshot.position)
     }
 
@@ -198,7 +198,7 @@ import Foundation
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 100), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         // dist == 0 가드로 nan/inf 분리 없이 그대로 둠
         #expect(pills[0].position.x == 100)
         #expect(pills[1].position.x == 100)
@@ -210,7 +210,7 @@ import Foundation
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 50, dy: 0), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: -50, dy: 0), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         // 좌측 pill velocity는 양수→음수 (튕김), 우측은 음수→양수
         #expect(pills[0].velocity.dx < 0)
         #expect(pills[1].velocity.dx > 0)
@@ -222,34 +222,79 @@ import Foundation
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: -10, dy: 0), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 10, dy: 0), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         // velocity 부호 그대로 유지 (impulse 적용 X). 수평 stack(nx=1)이라 stack-breaking 미적용.
         #expect(pills[0].velocity.dx == -10)
         #expect(pills[1].velocity.dx == 10)
     }
 
-    @Test func 수직_stack시_horizontal_kick_부여() {
-        // 두 알약이 위/아래 stack — normal 이 거의 vertical (|nx|≈0).
-        // 위 알약(idx 0, y=100), 아래 알약(idx 1, y=120). minDist 26.4 < 20 → 침투.
+    @Test func gravity_아래_방향_시_수직_stack_horizontal_kick() {
+        // gravity (0,1) 에서 위/아래 stack → perpendicular(±x) 방향 nudge.
         var pills = [
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 120), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
-        // 위/아래 알약 모두 dx 가 0 이 아니어야 함 (반대 부호로 nudge)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
+        // x 방향 반대 부호 nudge, y 방향은 거의 0
         #expect(pills[0].velocity.dx != 0)
         #expect(pills[1].velocity.dx != 0)
         #expect((pills[0].velocity.dx * pills[1].velocity.dx) < 0)
+        #expect(abs(pills[0].velocity.dy) < 0.001)
+        #expect(abs(pills[1].velocity.dy) < 0.001)
     }
 
-    @Test func 수평_정렬은_stack_breaking_미적용() {
-        // 수평 정렬 (nx=1) — stack breaking 조건(|nx|<0.3) 미충족.
+    @Test func gravity_좌측_방향_시_수평_stack_vertical_kick() {
+        // gravity (-1,0) 에서 좌우 stack(좌측 벽 따라 column) → perpendicular(±y) 방향 nudge.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 120, y: 100), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(-1, 0))
+        // y 방향 반대 부호 nudge, x 방향은 거의 0
+        #expect(pills[0].velocity.dy != 0)
+        #expect(pills[1].velocity.dy != 0)
+        #expect((pills[0].velocity.dy * pills[1].velocity.dy) < 0)
+        #expect(abs(pills[0].velocity.dx) < 0.001)
+        #expect(abs(pills[1].velocity.dx) < 0.001)
+    }
+
+    @Test func gravity_대각_방향_시_perpendicular_nudge() {
+        // gravity (1,1) 정규화 (0.707, 0.707) 방향 stack → perpendicular (-0.707, 0.707) nudge.
+        // 알약 (100,100) 과 (115.55, 115.55) 거리 ~22 < minDist 26.4 → 침투.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 115.55, y: 115.55), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(1, 1))
+        // dx, dy 모두 0이 아니고 부호 반대 (perpendicular 방향)
+        #expect(pills[0].velocity.dx != 0)
+        #expect(pills[0].velocity.dy != 0)
+        // perpendicular = (-gy, gx) = (-0.707, 0.707) — dx 와 dy 부호 반대
+        #expect((pills[0].velocity.dx * pills[0].velocity.dy) < 0)
+    }
+
+    @Test func gravity_방향과_normal이_perpendicular면_stack_breaking_미적용() {
+        // gravity (0,1), 알약 수평 정렬 (nx=1) → normal · gravity = 0 → stack 아님.
         var pills = [
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 0, dy: 0), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 0, dy: 0), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
-        // velocity 변화 없음 (vRelN=0 이라 elastic 도 미적용, stack-breaking 도 미적용)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
+        // velocity 변화 없음 (elastic 미적용 + stack-breaking 미적용)
+        #expect(pills[0].velocity.dx == 0)
+        #expect(pills[0].velocity.dy == 0)
+        #expect(pills[1].velocity.dx == 0)
+        #expect(pills[1].velocity.dy == 0)
+    }
+
+    @Test func gravity가_거의_0이면_stack_breaking_미적용() {
+        // gravity 거의 0 — stack 의미 없음, nudge 없음.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 120), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 0.05))
+        // velocity 변화 없음
         #expect(pills[0].velocity.dx == 0)
         #expect(pills[1].velocity.dx == 0)
     }
@@ -326,7 +371,7 @@ import Foundation
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 0, dy: 50), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 0, dy: -50), radius: 22),
         ]
-        PillPhysicsEngine.resolvePairCollisions(&pills)
+        PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
         // tangent 방향 상대 속도가 있으니 양쪽 angular 반대 부호 (pairSpinTransfer 0.3)
         #expect(pills[0].angularVelocity != 0)
         #expect(pills[1].angularVelocity != 0)
