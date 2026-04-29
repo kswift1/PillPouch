@@ -313,3 +313,73 @@ docs: append Stage 3 polish section
 ```
 
 ## 승인 ⛔ (재)
+
+---
+
+# 추가: Polish v2 (실 기기 검증 후 2차)
+
+## 트리거
+
+작업지시자 1차 polish 검증 결과 결함 2개:
+1. **여전히 너무 느림** — gScale 90도 부족. terminal velocity 18.75pt/s 라 봉지 가로지르는 데 15초+
+2. **알약 여전히 겹침** — root cause: bounds collision의 `r = radius * 0.5`. 충돌 반지름이 시각 frame의 절반이라 알약 frame 53pt가 22pt 거리까지 침투해도 충돌 미발생
+
+## 변경
+
+### gScale 90 → 250
+
+terminal velocity 18.75 → 52 pt/s. 봉지 높이 280pt를 1초에 가로지름.
+
+### collisionRadiusRatio 신규 (0.5 → 0.9)
+
+기존 코드의 `radius * 0.5` 매직 넘버를 `collisionRadiusRatio` 상수로 추출. 자산이 frame을 거의 가득 채운다는 사실 반영해 0.9로 상향.
+
+| 항목 | 전 (시각/충돌) | 후 (시각/충돌) |
+|---|---|---|
+| 알약 frame | 53pt | 53pt (변경 X) |
+| 충돌 반지름 (radius=22 기준) | 11pt | 19.8pt |
+| 충돌 발생 거리 (두 알약) | 22pt 침투 시 | 39.6pt 침투 시 |
+
+bounds collision + pair collision 양쪽 동일 비율 적용.
+
+### pairSeparation 0.5 → 1.0 + iteration 2회
+
+- 한 번의 충돌에서 완전 분리 (이전엔 절반씩 천천히)
+- 큰 overlap 또는 다중 침투(여러 알약 모임) 안정화 위해 iteration 2회
+
+### MotionEngineMock auto 활발화
+
+| 항목 | 전 | 후 |
+|---|---|---|
+| 주기 | 8초 | 4초 |
+| amplitude | 0.7 | 1.0 (x), 0.6+0.4 (y) |
+
+### 테스트 영향
+
+- bounds collision 4개 케이스: expected position 19.8 / 180.2 / 380.2 / 19.8 으로 갱신 (`abs(...) < 0.001` 부동소수점 비교)
+- 정착 테스트: 시작 100 + 10초 시뮬 (terminal velocity 빠르지만 bouncing 누적으로 정착까지 시간 필요)
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (18/18)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| `gScale` | **250** (40 → 90 → 250) | 1차 polish의 90도 약함. 모바일 환경에서 normalized [-1,1] gravity 신호로도 자연스러운 흔들림 만들려면 이 정도 scale 필요 |
+| `collisionRadiusRatio` | **0.9** | `* 0.5` 가 시각 frame의 절반이라는 비현실적 가정. 자산은 frame ~90% 차지 — 시각/충돌 일치 |
+| `pairSeparation` | **1.0** | 한 번에 완전 분리. iteration 2회와 합쳐 다중 침투 안정 |
+| Mock auto 주기 4초 | 데모 활발 | 8초는 시뮬에서 너무 느슨. 실 기기 흔들림과의 차이 줄임 |
+
+## 추가 커밋
+
+```
+fix(ios): boost shake intensity and fix pill overlap with full-radius collision (#25 stage3 polish v2)
+test(ios): adjust bounds collision expected positions for new ratio
+docs: append Stage 3 polish v2 section
+```
+
+## 승인 ⛔ (3차)
