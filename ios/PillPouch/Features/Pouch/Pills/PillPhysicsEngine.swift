@@ -11,8 +11,9 @@ import Foundation
 /// '살짝' 흔들림이 목표라 G_SCALE은 실 중력의 ~1/30 수준.
 enum PillPhysicsEngine {
     /// 중력 가속도 스케일 (pt/s²). terminal velocity ≈ gScale * dt / (1 - damping).
-    /// 400이면 terminal ~83 pt/s — 봉지(높이 280pt)를 0.5초 안에 가로지름.
-    static let gScale: Double = 400
+    /// 1000이면 gravity=1.0 에서 terminal ~208pt/s, gravity=0.5(일상 기울임)에서도 ~104pt/s
+    /// — 봉지 가로(~240pt)를 1~2초에 가로지름.
+    static let gScale: Double = 1000
 
     /// 매 tick 적용되는 속도 감쇠 (1보다 작음). 1초당 0.92 ^ 60 ≈ 0.007 → 정지.
     static let damping: Double = 0.92
@@ -37,11 +38,12 @@ enum PillPhysicsEngine {
     static let angularDamping: Double = 0.95
 
     /// pair collision 시 tangential relative velocity → angular velocity 변환 계수 (deg/s per pt/s).
-    /// 1.5 면 100pt/s 스침에서 150 deg/s 스핀.
-    static let pairSpinTransfer: Double = 1.5
+    /// 2.5 면 100pt/s 스침에서 250 deg/s 스핀.
+    static let pairSpinTransfer: Double = 2.5
 
     /// bounds collision 시 벽 평행 velocity → angular velocity (벽 따라 미끄러져 굴러가는 효과).
-    static let wallSpinTransfer: Double = 0.6
+    /// reflection 전 velocity 기준이라 강한 충돌에서도 spin 명확.
+    static let wallSpinTransfer: Double = 1.5
 
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
@@ -90,27 +92,30 @@ enum PillPhysicsEngine {
     // MARK: - Collisions
 
     /// 봉지 내부 사각 영역 충돌. 모서리는 단순 AABB로 근사.
-    /// 벽과 평행한 velocity 성분은 angular velocity 에 기여 (벽 따라 굴러가는 효과).
+    /// 벽과 평행한 velocity 성분(반사 전)은 angular velocity 에 기여 (벽 따라 굴러가는 효과).
+    /// 반사 후 velocity 로 계산하면 강한 충돌일수록 spin 이 작아지는 비대칭 발생 — pre-velocity 사용.
     static func resolveBoundsCollision(_ pills: inout [PillBody], in bounds: CGRect) {
         for i in pills.indices {
             let r = pills[i].radius * collisionRadiusRatio
+            let preDx = pills[i].velocity.dx
+            let preDy = pills[i].velocity.dy
             if pills[i].position.x - r < bounds.minX {
                 pills[i].position.x = bounds.minX + r
-                pills[i].velocity.dx = -pills[i].velocity.dx * restitution
-                pills[i].angularVelocity += Double(pills[i].velocity.dy) * wallSpinTransfer
+                pills[i].velocity.dx = -preDx * restitution
+                pills[i].angularVelocity += Double(preDy) * wallSpinTransfer
             } else if pills[i].position.x + r > bounds.maxX {
                 pills[i].position.x = bounds.maxX - r
-                pills[i].velocity.dx = -pills[i].velocity.dx * restitution
-                pills[i].angularVelocity -= Double(pills[i].velocity.dy) * wallSpinTransfer
+                pills[i].velocity.dx = -preDx * restitution
+                pills[i].angularVelocity -= Double(preDy) * wallSpinTransfer
             }
             if pills[i].position.y - r < bounds.minY {
                 pills[i].position.y = bounds.minY + r
-                pills[i].velocity.dy = -pills[i].velocity.dy * restitution
-                pills[i].angularVelocity -= Double(pills[i].velocity.dx) * wallSpinTransfer
+                pills[i].velocity.dy = -preDy * restitution
+                pills[i].angularVelocity -= Double(preDx) * wallSpinTransfer
             } else if pills[i].position.y + r > bounds.maxY {
                 pills[i].position.y = bounds.maxY - r
-                pills[i].velocity.dy = -pills[i].velocity.dy * restitution
-                pills[i].angularVelocity += Double(pills[i].velocity.dx) * wallSpinTransfer
+                pills[i].velocity.dy = -preDy * restitution
+                pills[i].angularVelocity += Double(preDx) * wallSpinTransfer
             }
         }
     }
