@@ -67,9 +67,13 @@ extension PillBody {
             let y = yStart + CGFloat(row) * cellSize
             let key = mix.categoryKey(for: index)
             let rot = (Double(index) * 47.0).truncatingRemainder(dividingBy: 60.0) - 30.0
+            // 시작 시 미세 horizontal jitter — gravity 적용 시 자연 spread.
+            // index 기반 deterministic, ±8 pt/s 범위.
+            let dxJitter = CGFloat(((index &* 73) % 17) - 8)
             return PillBody(
                 categoryKey: key,
                 position: CGPoint(x: x, y: y),
+                velocity: CGVector(dx: dxJitter, dy: 0),
                 radius: radius,
                 rotation: rot
             )

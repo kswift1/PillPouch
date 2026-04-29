@@ -51,6 +51,14 @@ enum PillPhysicsEngine {
     /// 벽 contact 검사 epsilon (pt). 침범 후 reflect 로 정확히 벽에 붙은 알약 검출.
     static let wallContactEpsilon: CGFloat = 1.0
 
+    /// pair collision normal 의 |nx| 가 이 값보다 작으면 vertical stack 으로 간주.
+    /// sphere-sphere 모델은 stack 시 좌우 spread 가 안 일어나는데, 실제 약봉지 알약은 길쭉해
+    /// stack 시 미끄러져 옆으로 흩어짐. 이 case 에서 horizontal nudge 부여.
+    static let verticalStackBreakingThreshold: CGFloat = 0.3
+
+    /// vertical stack 시 위 알약에 부여하는 horizontal velocity (pt/s). 부호는 id hash 로 결정.
+    static let verticalStackBreakingNudge: CGFloat = 12
+
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
     ///   - dt: 경과 시간 (초). 보통 1/60.
@@ -181,6 +189,16 @@ enum PillPhysicsEngine {
                               + (pills[j].velocity.dy - pills[i].velocity.dy) * Double(nx)
                     pills[i].angularVelocity -= vRelT * pairSpinTransfer
                     pills[j].angularVelocity += vRelT * pairSpinTransfer
+
+                    // Vertical stack breaking — sphere-sphere 모델 한계 보완.
+                    // normal 이 거의 수직이면 위 알약에 horizontal nudge 부여 (id hash 기반 부호).
+                    if abs(nx) < verticalStackBreakingThreshold {
+                        let upperIdx = pills[i].position.y < pills[j].position.y ? i : j
+                        let lowerIdx = upperIdx == i ? j : i
+                        let sign: CGFloat = (pills[upperIdx].id.hashValue & 1 == 0) ? 1 : -1
+                        pills[upperIdx].velocity.dx += verticalStackBreakingNudge * sign
+                        pills[lowerIdx].velocity.dx -= verticalStackBreakingNudge * sign
+                    }
 
                     // 1D elastic collision along normal (equal mass m=1) — 침투 중에만 적용.
                     let vRelN = (pills[j].velocity.dx - pills[i].velocity.dx) * nx
