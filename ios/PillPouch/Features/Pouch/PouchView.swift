@@ -7,9 +7,10 @@ import SwiftUI
 import UIKit
 
 /// 단일 약봉지 컴포넌트. 플라스틱 봉지 + 알약 + 찢기 인터랙션의 조립체.
-/// Stage 3: 알약이 motion gravity 따라 봉지 안에서 움직임. 찢기 Stage 4, 낙하 Stage 5.
+/// Stage 3: 알약이 motion gravity 따라 봉지 안에서 움직임. Stage 4: middle perforation 따라
+/// 좌→우 swipe 로 찢기 (50% 임계 + 햅틱). Stage 5: 낙하.
 struct PouchView: View {
-    let state: PouchState
+    @Binding var state: PouchState
     let slot: TimeSlot
     @Binding var pills: [PillBody]
     /// 화면 좌표계 (x: 우, y: 하) 단위 중력 벡터. ShowcaseView/Today 가 MotionEngine 으로 주입.
@@ -17,6 +18,7 @@ struct PouchView: View {
 
     @State private var lastTickDate: Date?
     @State private var haptics = PouchHapticDriver()
+    @State private var lastTearHapticStep: Int = 0
 
     var body: some View {
         GeometryReader { geo in
@@ -28,7 +30,10 @@ struct PouchView: View {
                     }
                     .opacity(0.96)
                     PouchPaperLayer(slot: slot)
+                    PouchTearLayer(state: state)
                 }
+                .contentShape(Rectangle())
+                .gesture(tearGesture(width: geo.size.width, perforationY: PouchView.perforationY(in: geo.size)))
                 .onChange(of: context.date) { _, newDate in
                     advancePhysics(to: newDate, bounds: bounds)
                 }
@@ -49,15 +54,69 @@ struct PouchView: View {
             haptics.playImpact(intensity: result.hapticIntensity, at: newDate)
         }
     }
+
+    // MARK: - Tear gesture
+
+    private func tearGesture(width: CGFloat, perforationY: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 4)
+            .onChanged { value in
+                handleTearChanged(value, width: width, perforationY: perforationY)
+            }
+            .onEnded { value in
+                handleTearEnded(value, width: width, perforationY: perforationY)
+            }
+    }
+
+    private func handleTearChanged(_ value: DragGesture.Value, width: CGFloat, perforationY: CGFloat) {
+        // 시작점이 perforation Y ±20pt 안 + 이미 .torn 이 아니면 진행.
+        guard abs(value.startLocation.y - perforationY) <= Const.startHitTolerance else { return }
+        if case .torn = state { return }
+
+        let progress = max(0, min(1, value.translation.width / max(width - Const.tearMargin * 2, 1)))
+        let step = Int(progress * 10)
+        if step > lastTearHapticStep {
+            haptics.playTearStep()
+            lastTearHapticStep = step
+        }
+        state = .tearing(progress: progress)
+    }
+
+    private func handleTearEnded(_ value: DragGesture.Value, width: CGFloat, perforationY: CGFloat) {
+        guard abs(value.startLocation.y - perforationY) <= Const.startHitTolerance else { return }
+        if case .torn = state { return }
+
+        let progress = max(0, min(1, value.translation.width / max(width - Const.tearMargin * 2, 1)))
+        if progress >= Const.tearThreshold {
+            haptics.playTearSuccess()
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.74)) {
+                state = .torn
+            }
+        } else {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                state = .sealed
+            }
+        }
+        lastTearHapticStep = 0
+    }
+
+    private enum Const {
+        static let startHitTolerance: CGFloat = 20
+        static let tearThreshold: Double = 0.5
+        static let tearMargin: CGFloat = 16
+    }
 }
 
 @MainActor
 private final class PouchHapticDriver {
     private let impact = UIImpactFeedbackGenerator(style: .light)
+    private let tearStepImpact = UIImpactFeedbackGenerator(style: .light)
+    private let tearSuccess = UINotificationFeedbackGenerator()
     private var lastImpactDate = Date.distantPast
 
     func prepare() {
         impact.prepare()
+        tearStepImpact.prepare()
+        tearSuccess.prepare()
     }
 
     func playImpact(intensity: Double, at date: Date) {
@@ -65,6 +124,18 @@ private final class PouchHapticDriver {
         lastImpactDate = date
         impact.impactOccurred(intensity: min(max(intensity, 0.25), 0.65))
         impact.prepare()
+    }
+
+    /// Tear 진행도 매 10% 도달 시 호출 — 미세 light × 1.
+    func playTearStep() {
+        tearStepImpact.impactOccurred(intensity: 0.55)
+        tearStepImpact.prepare()
+    }
+
+    /// 50% 임계 통과해 torn 확정 시 1번 — 강한 success.
+    func playTearSuccess() {
+        tearSuccess.notificationOccurred(.success)
+        tearSuccess.prepare()
     }
 }
 
@@ -82,6 +153,12 @@ extension PouchView {
             height: size.height - topInset - bottomInset
         )
     }
+
+    /// Middle perforation 라인의 y 좌표. PouchPaperLayer 의 perforationY 와 동일 식.
+    /// Tear gesture 시작점 hit-test 와 PouchTearLayer zigzag 위치가 공유.
+    static func perforationY(in size: CGSize) -> CGFloat {
+        14 + 38 + 36  // topSeal + headerCenter + headerDivider
+    }
 }
 
 #Preview("Pouch · Morning · light · 5 pills static") {
@@ -93,11 +170,12 @@ extension PouchView {
 }
 
 private struct StatePreview: View {
+    @State private var pouchState: PouchState = .sealed
     @State private var pills: [PillBody] = {
         let bounds = PouchView.pillBounds(in: CGSize(width: 240, height: 320))
         return PillBody.mock(count: 5, mix: .mixed, bounds: bounds)
     }()
     var body: some View {
-        PouchView(state: .sealed, slot: .morning, pills: $pills, gravity: SIMD2(0, 1))
+        PouchView(state: $pouchState, slot: .morning, pills: $pills, gravity: SIMD2(0, 1))
     }
 }
