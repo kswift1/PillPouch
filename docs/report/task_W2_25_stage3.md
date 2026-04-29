@@ -383,3 +383,118 @@ docs: append Stage 3 polish v2 section
 ```
 
 ## 승인 ⛔ (3차)
+
+---
+
+# 추가: Polish v3 (실 약봉지 UX 정합)
+
+## 트리거
+
+작업지시자 3차 검증 결함 3개:
+1. **여전히 덜 활발** — gScale 250도 부족
+2. **회전 부재** — 충돌/마찰에 따라 알약이 돌아가지 않음. 실 약봉지에서 흔들면 알약이 굴러감
+3. **1층/2층 알약 사이 여백 비현실적** — 가로로 긴 capsule(vitaminB 등) 자산은 frame 의 ~50%만 시각적으로 차지하는데 충돌 반경 ratio 0.9는 이 비율을 무시해서 시각상 알약 1개 분량 여백 발생
+
+## 변경
+
+### gScale 250 → 400
+
+terminal velocity 52 → 83 pt/s. 봉지 높이 280pt를 0.5초 안에 가로지름.
+
+### collisionRadiusRatio 0.9 → 0.6
+
+PR #22 카테고리 자산 비율 분석:
+- 정사각 자산 (tablet 등): frame 100% 차지 → 시각 반지름 22pt
+- 가로 capsule 자산 (vitaminB, omega3): frame 가로 100%, 세로 ~50% → 시각 세로 반지름 ~11pt
+
+이전 ratio 0.9 (반지름 19.8pt) 는 가로 자산엔 너무 컸음. **0.6 (반지름 13.2pt)** 으로 시각 두께 평균에 정합. 두 알약 시각상 거의 닿은 상태에서 충돌.
+
+### Mock initial spacing 3pt → 1pt
+
+처음부터 빽빽하게 배치 — 이미지의 1층/2층 큰 여백을 자연스러운 밀집으로.
+
+### 각운동 (angular velocity) 신규
+
+PillBody에 `angularVelocity: Double` (deg/s) 필드 추가.
+
+#### 매 tick integrate
+
+```swift
+pill.rotation += pill.angularVelocity * dt
+pill.angularVelocity *= angularDamping  // 0.95
+```
+
+1초 후 사실상 정지 (`0.95^60 ≈ 0.046`).
+
+#### Pair collision tangential transfer
+
+```swift
+let tangent = (-ny, nx)  // normal 시계방향 90°
+let vRelT = (vj - vi) · tangent
+pills[i].angularVelocity -= vRelT * pairSpinTransfer  // 1.5
+pills[j].angularVelocity += vRelT * pairSpinTransfer
+```
+
+스쳐 지나가는 충돌 시 양쪽이 반대 방향으로 회전. 정면 충돌은 tangent 성분 0이라 회전 없음 — 직관적.
+
+**중요: tangential transfer는 `vRelN < 0` 가드 위에 위치** — 정확한 스침(vRelN=0)에서도 회전이 발생하도록.
+
+#### Bounds wall friction spin
+
+```swift
+// 좌측 벽: angularVelocity += dy * wallSpinTransfer (0.6)
+// 우측 벽: -= dy * wallSpinTransfer
+// 상단 벽: -= dx * wallSpinTransfer
+// 하단 벽: += dx * wallSpinTransfer
+```
+
+벽 따라 미끄러지는 알약이 자연스럽게 굴러감. 부호는 시계방향 회전(+) 기준.
+
+#### 새 상수 3개
+
+| 상수 | 값 | 의미 |
+|---|---|---|
+| `angularDamping` | 0.95 | 매 tick 감쇠 |
+| `pairSpinTransfer` | 1.5 (deg/s per pt/s) | 100pt/s 스침 → 150 deg/s 스핀 |
+| `wallSpinTransfer` | 0.6 | 벽 마찰 spin 감도 |
+
+### 신규 테스트 4개 (Suite `PillPhysicsEngineRotationTests`)
+
+| 케이스 | 검증 |
+|---|---|
+| `angularVelocity가_매_tick_rotation에_누적된다` | rotation += 60 * (1/60) = 1.0 |
+| `angularDamping이_angularVelocity를_감쇠시킨다` | 100 → 95 (0.95 비율) |
+| `좌측_벽_충돌시_y_velocity가_angular에_기여` | dy 30 → angular 18 |
+| `스쳐_지나가는_충돌시_양쪽_반대_부호_spin` | 두 알약 angular 곱 < 0 |
+
+총 22/22 통과.
+
+### 정착 테스트 expected 갱신
+
+r 13.2로 변경 → 정착점 maxY - r = 386.8. 범위 380~387.
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (22/22, +4 회전 suite)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| `gScale` | **400** (250→400) | 모바일 일상 motion에서 충분히 활발한 동작 |
+| `collisionRadiusRatio` | **0.6** | 카테고리 자산 비율(정사각~가로 2:1) 평균 시각 두께. 0.9는 가로 자산 무시 |
+| Mock initial spacing | **1pt** | 빽빽하게 시작 — 흔들리면서 자연 분리 |
+| `angularDamping` | **0.95** (rotation), 0.92 (translation) | 회전이 직선 운동보다 살짝 더 오래 지속 — 알약 굴러가는 느낌 |
+| Tangential transfer 위치 | **`vRelN < 0` guard 위** | 정확한 스침(vRelN=0)에서도 회전 발생. 가드 안에 두면 정직각 스침 회전 사라짐 |
+
+## 추가 커밋
+
+```
+feat(ios): add angular velocity and tighten collision radius for realistic pouch UX (#25 stage3 polish v3)
+test(ios): cover rotation integration, damping, wall friction, and tangential transfer
+docs: append Stage 3 polish v3 section
+```
+
+## 승인 ⛔ (4차)
