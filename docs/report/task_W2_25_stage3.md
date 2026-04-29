@@ -498,3 +498,95 @@ docs: append Stage 3 polish v3 section
 ```
 
 ## 승인 ⛔ (4차)
+
+---
+
+# 추가: Polish v4 (이동 속도 + 회전 비대칭 fix)
+
+## 트리거
+
+작업지시자 4차 검증 결함 2개:
+1. **왼쪽으로 돌릴 때만 회전하며 내려감** — 우측 회전이 약하거나 안 보임
+2. **이동 너무 느림** — gScale 400도 부족
+
+## 진단
+
+### 회전 비대칭 root cause
+
+기존 코드: bounds collision 시 `velocity.dx = -velocity.dx * restitution` **반사 후** 의 `velocity.dy` 로 spin 계산.
+
+```swift
+pills[i].velocity.dx = -pills[i].velocity.dx * restitution   // 먼저 반사
+pills[i].angularVelocity += dy * wallSpinTransfer            // 이미 반사된 dy 사용
+```
+
+문제: dx만 반사하지만, 이전 코드 순서상 dy 도 같이 영향받지 않더라도 강한 충돌일수록 spin이 작아지는 구조 + magnitude 자체 부족.
+
+좌측 벽은 dy=양수(아래로 내려가는 알약)로 spin 명확히 보이지만, 우측 벽은 사용자가 이미 우측 자세로 잡아 dy 가 작아 spin 사라짐.
+
+### 이동 속도
+
+gScale 400, gravity=1.0 에서 terminal velocity 83pt/s. 실 사용자 일상 기울임은 gravity 0.3~0.5 정도 → terminal 25~42pt/s. 봉지 가로 240pt 가로지르는 데 5~9초.
+
+## 변경
+
+### gScale 400 → 1000
+
+| gravity | 전 (gScale 400) | 후 (gScale 1000) |
+|---|---|---|
+| 1.0 (강한 기울임) | 83 pt/s | 208 pt/s |
+| 0.5 (일상) | 41 pt/s | 104 pt/s |
+| 0.3 (살짝) | 25 pt/s | 62 pt/s |
+
+봉지 가로(~240pt) 가로지르는 시간: 일상 기울임에서 5초+ → 2초 안.
+
+### Wall spin: pre-velocity 사용
+
+```swift
+let preDx = pills[i].velocity.dx
+let preDy = pills[i].velocity.dy
+// 반사
+pills[i].velocity.dx = -preDx * restitution
+// spin은 pre-velocity 의 tangent 성분 사용
+pills[i].angularVelocity += preDy * wallSpinTransfer
+```
+
+강한 충돌에서도 spin 명확. 좌/우 비대칭 제거.
+
+### wallSpinTransfer 0.6 → 1.5, pairSpinTransfer 1.5 → 2.5
+
+회전 magnitude 2.5배 증가. 충돌/벽 마찰 회전 효과 확실히 보이도록.
+
+### 신규 테스트 2개
+
+| 케이스 | 검증 |
+|---|---|
+| `우측_벽_충돌시_y_velocity가_반대_부호_spin` | 좌/우 대칭 보장 — 우측 spin = -45 (좌측 +45 와 부호만 반대) |
+| `강한_충돌에서도_pre_velocity_spin_유지` | preDx -200, preDy 100 으로 강한 충돌 시 angular 150 (post-velocity 사용했으면 30 만) |
+
+기존 좌측 wall test의 expected 18 → 45 갱신.
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (24/24)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| `gScale` | **1000** (400→1000) | 일상 기울임(gravity ~0.5) 에서도 1~2초 가로지르는 활발함 |
+| Wall spin 시점 | **반사 전 velocity** | 강한 충돌일수록 spin 작아지는 비대칭 제거. 좌/우 동등 회전 보장 |
+| `wallSpinTransfer` | **1.5** (0.6→1.5) | 시각상 회전이 명확히 보일 magnitude. 더 키우면 over-rotation |
+| `pairSpinTransfer` | **2.5** (1.5→2.5) | 충돌 회전도 동등 강화 |
+
+## 추가 커밋
+
+```
+fix(ios): boost gravity scale and use pre-velocity for symmetric wall spin (#25 stage3 polish v4)
+test(ios): cover right-wall spin symmetry and pre-velocity spin magnitude
+docs: append Stage 3 polish v4 section
+```
+
+## 승인 ⛔ (5차)
