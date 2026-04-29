@@ -146,8 +146,8 @@ import Foundation
     }
 
     @Test func 지속_중력_장시간_시뮬레이션_후_바닥_위에_정착() {
-        // gScale 40 + damping 0.92 조합의 terminal velocity 가 ~8.3pt/s 라
-        // "살짝" 흔들림 의도. 시작 350 (바닥에서 39pt 위) + 30초 시뮬로 정착 확인.
+        // gScale 90 + damping 0.92 조합의 terminal velocity ~18.75pt/s.
+        // 시작 350 (바닥에서 39pt 위) + 30초 시뮬로 정착 확인.
         var pills = [PillBody(categoryKey: "lutein", position: .init(x: 100, y: 350), radius: 22)]
         for _ in 0 ..< 1800 {
             PillPhysicsEngine.tick(
@@ -202,5 +202,29 @@ import Foundation
         // dist == 0 가드로 nan/inf 분리 없이 그대로 둠
         #expect(pills[0].position.x == 100)
         #expect(pills[1].position.x == 100)
+    }
+
+    @Test func 정면_충돌_시_velocity가_교환된다() {
+        // 두 알약이 정면 충돌. 좌측은 +x로, 우측은 -x로 진행 → 침투. impulse로 부호 반전 + 0.7 감쇠.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: 50, dy: 0), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: -50, dy: 0), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills)
+        // 좌측 pill velocity는 양수→음수 (튕김), 우측은 음수→양수
+        #expect(pills[0].velocity.dx < 0)
+        #expect(pills[1].velocity.dx > 0)
+    }
+
+    @Test func 서로_멀어지는_중이면_velocity_교환_없음() {
+        // 침투 중이지만 v_rel · n > 0 (서로 멀어지는 중) — impulse 적용 X. position만 분리.
+        var pills = [
+            PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), velocity: .init(dx: -10, dy: 0), radius: 22),
+            PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 10, dy: 0), radius: 22),
+        ]
+        PillPhysicsEngine.resolvePairCollisions(&pills)
+        // velocity 부호 그대로 유지 (impulse 적용 X)
+        #expect(pills[0].velocity.dx == -10)
+        #expect(pills[1].velocity.dx == 10)
     }
 }
