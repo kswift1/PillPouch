@@ -17,7 +17,7 @@ import Foundation
             bounds: CGRect(x: 0, y: 0, width: 200, height: 400),
             pills: &pills
         )
-        // (gravity.y * gScale * dt) * damping = (1 * 40 * 1/60) * 0.92 ≈ 0.613
+        // 정지 마찰 threshold 를 뺀 중력 성분이 frame-rate 보정 damping 후 누적된다.
         #expect(pills[0].velocity.dy > 0)
         #expect(pills[0].velocity.dx == 0)
     }
@@ -58,6 +58,18 @@ import Foundation
         )
         #expect(pills.isEmpty)
     }
+
+    @Test func 작은_중력은_정지마찰로_무시된다() {
+        var pills = [PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22)]
+        PillPhysicsEngine.tick(
+            dt: 1.0 / 60.0,
+            gravity: SIMD2(0.03, 0.02),
+            bounds: CGRect(x: 0, y: 0, width: 200, height: 400),
+            pills: &pills
+        )
+        #expect(pills[0].position == CGPoint(x: 100, y: 100))
+        #expect(pills[0].velocity == .zero)
+    }
 }
 
 @Suite struct PillPhysicsEngineDampingTests {
@@ -71,6 +83,18 @@ import Foundation
         )
         // gravity 0 이라 damping 만 적용. 100 * 0.95 = 95.
         #expect(abs(pills[0].velocity.dx - 95) < 0.01)
+    }
+
+    @Test func damping은_dt_기반으로_적용된다() {
+        var pills = [PillBody(categoryKey: "calcium", position: .init(x: 100, y: 100), velocity: .init(dx: 100, dy: 0), radius: 22)]
+        PillPhysicsEngine.tick(
+            dt: 1.0 / 30.0,
+            gravity: SIMD2(0, 0),
+            bounds: CGRect(x: 0, y: 0, width: 200, height: 400),
+            pills: &pills
+        )
+        // 1/30초는 60Hz 기준 2 tick 이므로 100 * 0.95^2 = 90.25.
+        #expect(abs(pills[0].velocity.dx - 90.25) < 0.01)
     }
 
     @Test func 중력_없을때_120틱_후_velocity_거의_0() {
@@ -136,6 +160,31 @@ import Foundation
         #expect(pills[0].velocity.dy == 10)
     }
 
+    @Test func 약한_벽_침범은_튕기지_않고_정착한다() {
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 20), radius: 22)]
+        let result = PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
+        #expect(abs(pills[0].position.y - 386.8) < 0.001)
+        #expect(pills[0].velocity.dy == 0)
+        #expect(!result.shouldPlayHaptic)
+    }
+
+    @Test func 중간_벽_침범은_튕기지_않지만_haptic_event를_남긴다() {
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 40), radius: 22)]
+        let result = PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
+        #expect(abs(pills[0].position.y - 386.8) < 0.001)
+        #expect(pills[0].velocity.dy == 0)
+        #expect(result.shouldPlayHaptic)
+    }
+
+    @Test func 강한_벽_충돌은_haptic_event를_남긴다() {
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 300), radius: 22)]
+        let result = PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
+        #expect(abs(pills[0].position.y - 386.8) < 0.001)
+        #expect(pills[0].velocity.dy == -60)
+        #expect(result.shouldPlayHaptic)
+        #expect(result.hapticIntensity > 0)
+    }
+
     @Test func 벽_안에_안전하게_있으면_상태_변화_없음() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 200), velocity: .init(dx: 10, dy: 10), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
@@ -193,15 +242,14 @@ import Foundation
         #expect(pills[0].position == snapshot.position)
     }
 
-    @Test func 정확히_같은_위치에_있으면_dist_0_가드로_안전() {
+    @Test func 정확히_같은_위치에_있어도_결정적으로_분리된다() {
         var pills = [
             PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 100), radius: 22),
             PillBody(categoryKey: "vitaminC", position: .init(x: 100, y: 100), radius: 22),
         ]
         PillPhysicsEngine.resolvePairCollisions(&pills, gravity: SIMD2(0, 1))
-        // dist == 0 가드로 nan/inf 분리 없이 그대로 둠
-        #expect(pills[0].position.x == 100)
-        #expect(pills[1].position.x == 100)
+        #expect(pills[0].position.x != pills[1].position.x)
+        #expect(pills[0].position.y == pills[1].position.y)
     }
 
     @Test func 정면_충돌_시_velocity가_교환된다() {

@@ -6,6 +6,7 @@
 import CoreMotion
 import Foundation
 import Observation
+import UIKit
 
 /// 디바이스 중력 벡터를 SwiftUI 좌표계로 매핑해 publish 하는 인터페이스.
 /// 실 기기는 `RealMotionEngine` (CMMotionManager 래핑), 시뮬레이터는 `MotionEngineMock`.
@@ -23,6 +24,10 @@ protocol MotionEngineProtocol: AnyObject {
 final class RealMotionEngine: MotionEngineProtocol {
     private(set) var gravity: SIMD2<Double> = SIMD2(0, 1)
     private let manager = CMMotionManager()
+    private var hasReceivedGravity = false
+
+    /// 센서 샘플의 미세 떨림을 줄이는 저역 통과 필터. 첫 샘플은 지연 없이 바로 반영.
+    private let smoothingFactor = 0.22
 
     func start() {
         guard manager.isDeviceMotionAvailable else { return }
@@ -32,8 +37,7 @@ final class RealMotionEngine: MotionEngineProtocol {
         manager.startDeviceMotionUpdates(to: .main) { [weak self] motion, _ in
             guard let motion else { return }
             MainActor.assumeIsolated {
-                // CMMotionManager: x 우, y 위, z 화면 밖. SwiftUI: x 우, y 아래. y 부호 반전.
-                self?.gravity = SIMD2(motion.gravity.x, -motion.gravity.y)
+                self?.publishGravity(from: motion.gravity)
             }
         }
     }
@@ -43,10 +47,43 @@ final class RealMotionEngine: MotionEngineProtocol {
             manager.stopDeviceMotionUpdates()
         }
     }
+
+    private func publishGravity(from motionGravity: CMAcceleration) {
+        let screenGravity = mapToCurrentScreenCoordinates(motionGravity)
+        if hasReceivedGravity {
+            gravity += (screenGravity - gravity) * smoothingFactor
+        } else {
+            gravity = screenGravity
+            hasReceivedGravity = true
+        }
+    }
+
+    private func mapToCurrentScreenCoordinates(_ gravity: CMAcceleration) -> SIMD2<Double> {
+        // CMMotionManager device coordinates: x = device right, y = device top.
+        // SwiftUI screen coordinates: x = current screen right, y = current screen down.
+        switch currentInterfaceOrientation {
+        case .portrait:
+            return SIMD2(gravity.x, -gravity.y)
+        case .portraitUpsideDown:
+            return SIMD2(-gravity.x, gravity.y)
+        case .landscapeLeft:
+            return SIMD2(gravity.y, gravity.x)
+        case .landscapeRight:
+            return SIMD2(-gravity.y, -gravity.x)
+        default:
+            return SIMD2(gravity.x, -gravity.y)
+        }
+    }
+
+    private var currentInterfaceOrientation: UIInterfaceOrientation {
+        UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.interfaceOrientation }
+            .first { $0 != .unknown } ?? .portrait
+    }
 }
 
 /// 시뮬레이터 / 데모용. 두 모드:
-/// - `.auto`: 천천히 회전하는 가짜 gravity (8초 주기)
+/// - `.auto`: 천천히 회전하는 가짜 gravity (4초 주기)
 /// - `.manual(SIMD2)`: ShowcaseView 슬라이더가 직접 set
 @MainActor
 @Observable

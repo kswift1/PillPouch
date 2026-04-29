@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// 단일 약봉지 컴포넌트. 플라스틱 봉지 + 알약 + 찢기 인터랙션의 조립체.
 /// Stage 3: 알약이 motion gravity 따라 봉지 안에서 움직임. 찢기 Stage 4, 낙하 Stage 5.
@@ -13,6 +14,9 @@ struct PouchView: View {
     @Binding var pills: [PillBody]
     /// 화면 좌표계 (x: 우, y: 하) 단위 중력 벡터. ShowcaseView/Today 가 MotionEngine 으로 주입.
     let gravity: SIMD2<Double>
+
+    @State private var lastTickDate: Date?
+    @State private var haptics = PouchHapticDriver()
 
     var body: some View {
         GeometryReader { geo in
@@ -28,18 +32,39 @@ struct PouchView: View {
                 .onChange(of: context.date) { _, newDate in
                     advancePhysics(to: newDate, bounds: bounds)
                 }
+                .onAppear {
+                    haptics.prepare()
+                }
             }
         }
     }
-
-    @State private var lastTickDate: Date?
 
     private func advancePhysics(to newDate: Date, bounds: CGRect) {
         let prev = lastTickDate ?? newDate
         let dt = min(newDate.timeIntervalSince(prev), 1.0 / 30.0) // dt 상한 — 백그라운드 복귀 시 점프 방지
         lastTickDate = newDate
         guard dt > 0 else { return }
-        PillPhysicsEngine.tick(dt: dt, gravity: gravity, bounds: bounds, pills: &pills)
+        let result = PillPhysicsEngine.tick(dt: dt, gravity: gravity, bounds: bounds, pills: &pills)
+        if result.shouldPlayHaptic {
+            haptics.playImpact(intensity: result.hapticIntensity, at: newDate)
+        }
+    }
+}
+
+@MainActor
+private final class PouchHapticDriver {
+    private let impact = UIImpactFeedbackGenerator(style: .light)
+    private var lastImpactDate = Date.distantPast
+
+    func prepare() {
+        impact.prepare()
+    }
+
+    func playImpact(intensity: Double, at date: Date) {
+        guard date.timeIntervalSince(lastImpactDate) >= 0.10 else { return }
+        lastImpactDate = date
+        impact.impactOccurred(intensity: min(max(intensity, 0.25), 0.65))
+        impact.prepare()
     }
 }
 
