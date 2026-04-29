@@ -69,13 +69,13 @@ import Foundation
             bounds: CGRect(x: 0, y: 0, width: 200, height: 400),
             pills: &pills
         )
-        // gravity 0 이라 damping 만 적용. 100 * 0.92 = 92.
-        #expect(abs(pills[0].velocity.dx - 92) < 0.01)
+        // gravity 0 이라 damping 만 적용. 100 * 0.95 = 95.
+        #expect(abs(pills[0].velocity.dx - 95) < 0.01)
     }
 
-    @Test func 중력_없을때_60틱_후_velocity_거의_0() {
+    @Test func 중력_없을때_120틱_후_velocity_거의_0() {
         var pills = [PillBody(categoryKey: "magnesium", position: .init(x: 100, y: 100), velocity: .init(dx: 100, dy: 100), radius: 22)]
-        for _ in 0 ..< 60 {
+        for _ in 0 ..< 120 {
             PillPhysicsEngine.tick(
                 dt: 1.0 / 60.0,
                 gravity: SIMD2(0, 0),
@@ -83,7 +83,7 @@ import Foundation
                 pills: &pills
             )
         }
-        // 100 * 0.92^60 ≈ 0.69 — 사실상 정지에 가까움
+        // 100 * 0.95^120 ≈ 0.21 — 사실상 정지에 가까움
         #expect(abs(pills[0].velocity.dx) < 1.0)
         #expect(abs(pills[0].velocity.dy) < 1.0)
     }
@@ -98,8 +98,8 @@ import Foundation
             bounds: CGRect(x: 0, y: 0, width: 1000, height: 1000),
             pills: &pills
         )
-        // velocity는 damping 먼저 적용 → 60 * 0.92 = 55.2. position 변화 = 55.2 * (1/60) = 0.92.
-        #expect(abs(pills[0].position.x - 100.92) < 0.01)
+        // velocity 는 damping 먼저 적용 → 60 * 0.95 = 57. position 변화 = 57 * (1/60) = 0.95.
+        #expect(abs(pills[0].position.x - 100.95) < 0.01)
         #expect(pills[0].position.y == 100)
     }
 }
@@ -112,28 +112,28 @@ import Foundation
         // collision r = radius * 0.6 = 13.2. position.x - r = -8.2 < bounds.minX(0).
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
         #expect(abs(pills[0].position.x - 13.2) < 0.001)  // bounds.minX + r
-        #expect(pills[0].velocity.dx == 15) // -(-50) * 0.3 = 15 (반사 + 30% 감쇠)
+        #expect(pills[0].velocity.dx == 10) // -(-50) * 0.2 = 10 (반사 + 80% 감쇠)
     }
 
     @Test func 우측_벽_침범시_안쪽으로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 195, y: 100), velocity: .init(dx: 50, dy: 0), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
         #expect(abs(pills[0].position.x - 186.8) < 0.001) // bounds.maxX - r = 200 - 13.2
-        #expect(pills[0].velocity.dx == -15)
+        #expect(pills[0].velocity.dx == -10)
     }
 
     @Test func 하단_벽_침범시_위로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 395), velocity: .init(dx: 0, dy: 50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
         #expect(abs(pills[0].position.y - 386.8) < 0.001) // bounds.maxY - r
-        #expect(pills[0].velocity.dy == -15)
+        #expect(pills[0].velocity.dy == -10)
     }
 
     @Test func 상단_벽_침범시_아래로_밀어내고_velocity_반사() {
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 100, y: 5), velocity: .init(dx: 0, dy: -50), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: bounds)
         #expect(abs(pills[0].position.y - 13.2) < 0.001) // bounds.minY + r
-        #expect(pills[0].velocity.dy == 15)
+        #expect(pills[0].velocity.dy == 10)
     }
 
     @Test func 벽_안에_안전하게_있으면_상태_변화_없음() {
@@ -250,30 +250,48 @@ import Foundation
             bounds: CGRect(x: 0, y: 0, width: 1000, height: 1000),
             pills: &pills
         )
-        // 100 * 0.95 = 95
-        #expect(abs(pills[0].angularVelocity - 95) < 0.001)
+        // 100 * 0.80 = 80
+        #expect(abs(pills[0].angularVelocity - 80) < 0.001)
     }
 
-    @Test func 좌측_벽_충돌시_y_velocity가_angular에_기여() {
+    @Test func 좌측_벽_contact_시_target_omega로_lerp() {
+        // 좌측 벽 contact: target ω = dy / radius * (180/π). dy=30, r=22 → target ≈ 78.13.
+        // 시작 ω=0, lerp 0.3 → 0 + (78.13 - 0) * 0.3 ≈ 23.44.
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -50, dy: 30), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
-        // 좌측 벽: angularVelocity += preDy * wallSpinTransfer = 30 * 1.5 = 45
-        #expect(abs(pills[0].angularVelocity - 45) < 0.001)
+        let expected = 30.0 / 22.0 * (180.0 / .pi) * 0.3
+        #expect(abs(pills[0].angularVelocity - expected) < 0.001)
     }
 
-    @Test func 우측_벽_충돌시_y_velocity가_반대_부호_spin() {
+    @Test func 우측_벽_contact_시_반대_부호_target() {
+        // 우측 벽: target ω = -dy / r. dy=30 → target ≈ -78.13. lerp 0.3 → ≈ -23.44.
         var pills = [PillBody(categoryKey: "iron", position: .init(x: 195, y: 100), velocity: .init(dx: 50, dy: 30), radius: 22)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
-        // 우측 벽: angularVelocity -= preDy * wallSpinTransfer = -45
-        #expect(abs(pills[0].angularVelocity - (-45)) < 0.001)
+        let expected = -30.0 / 22.0 * (180.0 / .pi) * 0.3
+        #expect(abs(pills[0].angularVelocity - expected) < 0.001)
     }
 
-    @Test func 강한_충돌에서도_pre_velocity_spin_유지() {
-        // reflection 후 dy 는 0.3 비율로 감쇠되지만, spin은 pre-velocity 기준이라 강한 충돌에서도 강함.
-        var pills = [PillBody(categoryKey: "iron", position: .init(x: 5, y: 100), velocity: .init(dx: -200, dy: 100), radius: 22)]
+    @Test func 좌측_벽_지속_contact_시_target_omega로_수렴() {
+        // 알약을 좌측 벽에 붙인 채 dy=66 으로 미끄러짐. 30 tick 반복 후 거의 target 도달.
+        // target = 66/22 * 57.3 ≈ 171.9 deg/s
+        var pills = [PillBody(categoryKey: "iron", position: .init(x: 13.2, y: 100), velocity: .init(dx: 0, dy: 66), radius: 22)]
+        for _ in 0 ..< 30 {
+            PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
+            // angularDamping 만 적용 (자유 비행 시 ω 죽음 — 하지만 contact 매 tick lerp 이라 유지)
+            pills[0].angularVelocity *= PillPhysicsEngine.angularDamping
+        }
+        let target = 66.0 / 22.0 * (180.0 / .pi)
+        // damping 까지 같이 작용하니 정확한 target 은 아니지만 부호 + magnitude 큰 값
+        #expect(pills[0].angularVelocity > target * 0.3)
+        #expect(pills[0].angularVelocity < target)
+    }
+
+    @Test func 자유_비행_시_wall_contact_없으면_lerp_미적용() {
+        // 봉지 가운데에 있는 알약 — 어느 벽도 contact X. ω 변화 없음 (damping 만).
+        var pills = [PillBody(categoryKey: "vitaminD", position: .init(x: 100, y: 200), velocity: .init(dx: 50, dy: 50), radius: 22, angularVelocity: 100)]
         PillPhysicsEngine.resolveBoundsCollision(&pills, in: CGRect(x: 0, y: 0, width: 200, height: 400))
-        // angular = 100 * 1.5 = 150 (pre dy 100). post-velocity 사용했으면 100 * 0.3 = 30 만 나옴.
-        #expect(abs(pills[0].angularVelocity - 150) < 0.001)
+        // ω 변화 없음 (lerp 미적용)
+        #expect(pills[0].angularVelocity == 100)
     }
 
     @Test func 스쳐_지나가는_충돌시_양쪽_반대_부호_spin() {
@@ -283,7 +301,7 @@ import Foundation
             PillBody(categoryKey: "vitaminC", position: .init(x: 110, y: 100), velocity: .init(dx: 0, dy: -50), radius: 22),
         ]
         PillPhysicsEngine.resolvePairCollisions(&pills)
-        // tangent 방향 상대 속도가 있으니 양쪽 angular 반대 부호
+        // tangent 방향 상대 속도가 있으니 양쪽 angular 반대 부호 (pairSpinTransfer 0.3)
         #expect(pills[0].angularVelocity != 0)
         #expect(pills[1].angularVelocity != 0)
         #expect((pills[0].angularVelocity * pills[1].angularVelocity) < 0)
