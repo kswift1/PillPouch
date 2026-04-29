@@ -22,39 +22,16 @@ struct PouchTearLayer: View {
         }
     }
 
-    // MARK: - Style 1: Lift (위쪽 조각 들림 + 회전)
+    // MARK: - Style 1: Lift (PaperLayer 분리는 PouchView 가 처리, 여기는 본체 측 jagged edge 만)
 
     @ViewBuilder
     private var liftView: some View {
         GeometryReader { geo in
             if let progress = activeProgress() {
                 let y = PouchView.perforationY(in: geo.size)
-                let lift = CGFloat(progress) * Const.liftMaxDistance
-                let tilt = progress * Const.liftMaxAngle
-
-                ZStack {
-                    // 위쪽 조각 — PaperLayer 복제본 mask + transform
-                    PouchPaperLayer(slot: slot)
-                        .mask(
-                            Rectangle()
-                                .frame(width: geo.size.width, height: y + Const.jaggedAmplitude)
-                                .position(x: geo.size.width / 2, y: (y + Const.jaggedAmplitude) / 2)
-                        )
-                        .offset(y: -lift)
-                        .rotationEffect(.degrees(tilt), anchor: .top)
-                        .shadow(color: .black.opacity(progress * 0.22), radius: 4, x: 0, y: 2)
-                        .allowsHitTesting(false)
-
-                    // 들린 조각 하단 jagged edge — 종이 찢긴 가장자리
-                    ZigZagEdge(progress: progress, y: y - lift, inset: Const.inset, amplitude: Const.jaggedAmplitude)
-                        .stroke(edgeColor, lineWidth: Const.lineWidth)
-                        .allowsHitTesting(false)
-
-                    // 본체 측 가장자리 (들리지 않은 아래쪽)
-                    ZigZagEdge(progress: progress, y: y, inset: Const.inset, amplitude: Const.jaggedAmplitude)
-                        .stroke(edgeColor.opacity(0.65), lineWidth: Const.lineWidth)
-                        .allowsHitTesting(false)
-                }
+                ZigZagEdge(progress: progress, y: y, inset: Const.inset, amplitude: Const.jaggedAmplitude)
+                    .stroke(edgeColor.opacity(0.55), lineWidth: Const.lineWidth)
+                    .allowsHitTesting(false)
             }
         }
     }

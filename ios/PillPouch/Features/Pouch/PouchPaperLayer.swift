@@ -211,6 +211,44 @@ struct PouchPaperLayer: View {
     }
 }
 
+/// PaperLayer 의 perforation 위쪽 절반. lift tear 시 본체와 분리되어 transform 됨.
+/// 내부적으로 PouchPaperLayer 그리고 horizontal Rectangle mask 로 잘라 위쪽만 노출.
+struct PouchPaperTop: View {
+    let slot: TimeSlot
+
+    var body: some View {
+        GeometryReader { geo in
+            let y = PouchView.perforationY(in: geo.size)
+            PouchPaperLayer(slot: slot)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .mask(
+                    Rectangle()
+                        .frame(width: geo.size.width, height: y)
+                        .position(x: geo.size.width / 2, y: y / 2)
+                )
+        }
+    }
+}
+
+/// PaperLayer 의 perforation 아래쪽 절반. lift tear 시 본체로 고정.
+struct PouchPaperBottom: View {
+    let slot: TimeSlot
+
+    var body: some View {
+        GeometryReader { geo in
+            let y = PouchView.perforationY(in: geo.size)
+            let bottomHeight = max(0, geo.size.height - y)
+            PouchPaperLayer(slot: slot)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .mask(
+                    Rectangle()
+                        .frame(width: geo.size.width, height: bottomHeight)
+                        .position(x: geo.size.width / 2, y: y + bottomHeight / 2)
+                )
+        }
+    }
+}
+
 /// 봉지 outline + 좌/우 perforation 반원 노치를 뺀 shape.
 /// fill / mask / stroke 모두에 사용 — 본체와 노치를 단일 source로.
 struct NotchedPouchShape: Shape {

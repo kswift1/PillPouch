@@ -31,7 +31,7 @@ struct PouchView: View {
                         PillView(pill: pill)
                     }
                     .opacity(0.96)
-                    PouchPaperLayer(slot: slot)
+                    paperLayerStack
                     PouchTearLayer(state: state, slot: slot, style: tearStyle)
                 }
                 .contentShape(Rectangle())
@@ -45,6 +45,33 @@ struct PouchView: View {
             }
         }
     }
+
+    /// PaperLayer 합성 — `.lift` 면 위/아래 두 조각 분리해 위쪽 transform,
+    /// `.gap` 이면 단일 PaperLayer (TearLayer 가 가운데 어두운 틈 그림).
+    @ViewBuilder
+    private var paperLayerStack: some View {
+        if tearStyle == .lift {
+            PouchPaperBottom(slot: slot)
+            PouchPaperTop(slot: slot)
+                .offset(y: -tearLiftDistance)
+                .rotationEffect(.degrees(tearTiltAngle), anchor: .top)
+                .shadow(color: .black.opacity(tearShadowOpacity), radius: 4, x: 0, y: 2)
+        } else {
+            PouchPaperLayer(slot: slot)
+        }
+    }
+
+    private var tearProgress: Double {
+        switch state {
+        case .sealed: return 0
+        case .tearing(let p): return p
+        case .torn: return 1
+        }
+    }
+
+    private var tearLiftDistance: CGFloat { CGFloat(tearProgress) * 8 }
+    private var tearTiltAngle: Double { tearProgress * 6 }
+    private var tearShadowOpacity: Double { tearProgress * 0.20 }
 
     private func advancePhysics(to newDate: Date, bounds: CGRect) {
         let prev = lastTickDate ?? newDate
