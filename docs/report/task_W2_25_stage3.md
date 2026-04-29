@@ -247,3 +247,69 @@ docs: add Stage 3 report
 - ADR-0009 결정대로 middle perforation 라인이 tear 시작점
 
 ## 승인 ⛔
+
+---
+
+# 추가: Polish (작업지시자 피드백 반영)
+
+## 트리거
+
+작업지시자 1차 검토 결함 2개:
+1. **흔들림 너무 약함** — gScale 40 ("실 중력 1/30") 이 과도하게 보수적
+2. **알약끼리 뭉개짐** — pair collision이 position만 분리하고 velocity는 그대로라 momentum 교환 없음 → 부드럽게 미끄러지며 합쳐지는 듯 보임
+
+## 변경
+
+### gScale 40 → 90
+
+terminal velocity 8.3 → 18.75 pt/s (~2.3배). 봉지 안에서 활발하게 흔들림.
+
+### Pair collision velocity 교환 추가
+
+기존: position push-apart만.
+신규: 침투 중일 때(`v_rel · n < 0`) **1D elastic collision impulse along normal** 적용 (equal mass 가정).
+
+```swift
+let vRelN = (v_j - v_i) · n
+guard vRelN < 0 else { continue }   // 서로 다가갈 때만
+let impulse = -(1 + pairRestitution) * vRelN * 0.5
+v_i -= impulse * n
+v_j += impulse * n
+```
+
+상수 `pairRestitution: 0.7` 신규 — 30% 에너지 손실 반영. 1.0(완전 탄성)은 너무 활발, 0이면 다시 뭉개짐.
+
+### 신규 테스트 2개
+
+| Suite | 케이스 |
+|---|---|
+| `PillPhysicsEnginePairCollisionTests` | `정면_충돌_시_velocity가_교환된다` — 좌→우, 우→좌 알약 충돌 후 부호 반전 |
+| `PillPhysicsEnginePairCollisionTests` | `서로_멀어지는_중이면_velocity_교환_없음` — 침투 중이지만 v_rel > 0 이면 impulse 미적용 |
+
+총 18/18 통과.
+
+## 검증
+
+```
+xcodebuild test -scheme PillPouch -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.4' \
+  -only-testing:PillPouchTests/PillPhysicsEngine{Gravity,Damping,Integration,BoundsCollision,PairCollision}Tests
+** TEST SUCCEEDED ** (18/18)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| gScale | **90** (40 → 90) | "살짝" 의도가 과도하게 보수적이었음. 실 기기 흔들림 신호 자체가 normalized [-1,1] 이라 scale을 이 수준으로 키워야 모바일 사용 환경에서 자연스러움 |
+| pairRestitution | **0.7** | 1.0 = 완전 탄성 (지나치게 활발). 0.5 = 미적지근. 0.7 = 탱탱한 알약 충돌 |
+| impulse 적용 조건 | **`v_rel · n < 0` (침투 중일 때만)** | 이미 분리 중인 알약에 impulse 가하면 부자연스러운 가속 발생 |
+
+## 추가 커밋
+
+```
+fix(ios): tune physics for stronger shake and elastic pill collision (#25 stage3 polish)
+test(ios): cover pair collision velocity exchange and divergence guard
+docs: append Stage 3 polish section
+```
+
+## 승인 ⛔ (재)
