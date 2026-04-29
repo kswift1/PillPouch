@@ -51,13 +51,14 @@ enum PillPhysicsEngine {
     /// 벽 contact 검사 epsilon (pt). 침범 후 reflect 로 정확히 벽에 붙은 알약 검출.
     static let wallContactEpsilon: CGFloat = 1.0
 
-    /// pair collision normal 의 |nx| 가 이 값보다 작으면 vertical stack 으로 간주.
-    /// sphere-sphere 모델은 stack 시 좌우 spread 가 안 일어나는데, 실제 약봉지 알약은 길쭉해
-    /// stack 시 미끄러져 옆으로 흩어짐. 이 case 에서 horizontal nudge 부여.
-    static let verticalStackBreakingThreshold: CGFloat = 0.3
+    /// pair collision normal 이 gravity 방향과 거의 평행하면 (|n · ĝ| > 이 값) stack 으로 간주.
+    /// sphere-sphere 모델은 stack 시 perpendicular spread 가 안 일어나는데, 실제 약봉지 알약은
+    /// 길쭉해 stack 시 미끄러져 옆으로 흩어짐. 이 case 에서 perpendicular nudge 부여.
+    /// 0.95 = gravity 와 normal 사이 각도 18° 이내 (어느 방향 gravity 든 일반화).
+    static let stackParallelDotThreshold: CGFloat = 0.95
 
-    /// vertical stack 시 위 알약에 부여하는 horizontal velocity (pt/s). 부호는 id hash 로 결정.
-    static let verticalStackBreakingNudge: CGFloat = 12
+    /// stack 시 upper 알약에 부여하는 perpendicular velocity 크기 (pt/s). 부호는 id hash 로 결정.
+    static let stackBreakingNudge: CGFloat = 12
 
     /// 한 프레임 물리 진행. `pills` 배열을 in-place 갱신.
     /// - Parameters:
@@ -78,7 +79,7 @@ enum PillPhysicsEngine {
             integrateRotation(&pills[i], dt: dt)
         }
         resolveBoundsCollision(&pills, in: bounds)
-        resolvePairCollisions(&pills)
+        resolvePairCollisions(&pills, gravity: gravity)
     }
 
     // MARK: - Forces / integration
@@ -162,7 +163,14 @@ enum PillPhysicsEngine {
     /// 알약 간 sphere-sphere 충돌. O(N²) — N ≤ 8 이라 무시 가능.
     /// position push-apart + 침투 중일 때 normal 방향 velocity impulse 교환 (equal mass 가정).
     /// iteration 2회 — 큰 overlap에서 한 번에 안 풀리는 경우 안정화.
-    static func resolvePairCollisions(_ pills: inout [PillBody]) {
+    /// gravity 방향 stack(`|n · ĝ| > stackParallelDotThreshold`) 시 perpendicular nudge 적용.
+    static func resolvePairCollisions(_ pills: inout [PillBody], gravity: SIMD2<Double>) {
+        // gravity 정규화 (크기 너무 작으면 stack-breaking 의미 없으니 skip)
+        let gNorm = sqrt(gravity.x * gravity.x + gravity.y * gravity.y)
+        let hasGravity = gNorm > 0.1
+        let gx = hasGravity ? gravity.x / gNorm : 0
+        let gy = hasGravity ? gravity.y / gNorm : 0
+
         let count = pills.count
         guard count >= 2 else { return }
         for _ in 0 ..< pairCollisionIterations {
@@ -190,14 +198,26 @@ enum PillPhysicsEngine {
                     pills[i].angularVelocity -= vRelT * pairSpinTransfer
                     pills[j].angularVelocity += vRelT * pairSpinTransfer
 
-                    // Vertical stack breaking — sphere-sphere 모델 한계 보완.
-                    // normal 이 거의 수직이면 위 알약에 horizontal nudge 부여 (id hash 기반 부호).
-                    if abs(nx) < verticalStackBreakingThreshold {
-                        let upperIdx = pills[i].position.y < pills[j].position.y ? i : j
-                        let lowerIdx = upperIdx == i ? j : i
-                        let sign: CGFloat = (pills[upperIdx].id.hashValue & 1 == 0) ? 1 : -1
-                        pills[upperIdx].velocity.dx += verticalStackBreakingNudge * sign
-                        pills[lowerIdx].velocity.dx -= verticalStackBreakingNudge * sign
+                    // Stack breaking — sphere-sphere 모델 한계 보완.
+                    // normal 이 gravity 방향과 거의 평행하면 (어느 방향 gravity 든) stack 으로 간주.
+                    // upper = gravity 반대편 알약. nudge 는 gravity 의 perpendicular 방향(±).
+                    if hasGravity {
+                        let dotNG = nx * CGFloat(gx) + ny * CGFloat(gy)
+                        if abs(dotNG) > stackParallelDotThreshold {
+                            // upper = pos · g 가 작은 쪽 (gravity 반대 방향에 위치)
+                            let dotIG = pills[i].position.x * CGFloat(gx) + pills[i].position.y * CGFloat(gy)
+                            let dotJG = pills[j].position.x * CGFloat(gx) + pills[j].position.y * CGFloat(gy)
+                            let upperIdx = dotIG < dotJG ? i : j
+                            let lowerIdx = upperIdx == i ? j : i
+                            // perpendicular = (-gy, gx) — gravity 시계방향 90°
+                            let perpX = -CGFloat(gy)
+                            let perpY = CGFloat(gx)
+                            let sign: CGFloat = (pills[upperIdx].id.hashValue & 1 == 0) ? 1 : -1
+                            pills[upperIdx].velocity.dx += stackBreakingNudge * sign * perpX
+                            pills[upperIdx].velocity.dy += stackBreakingNudge * sign * perpY
+                            pills[lowerIdx].velocity.dx -= stackBreakingNudge * sign * perpX
+                            pills[lowerIdx].velocity.dy -= stackBreakingNudge * sign * perpY
+                        }
                     }
 
                     // 1D elastic collision along normal (equal mass m=1) — 침투 중에만 적용.
