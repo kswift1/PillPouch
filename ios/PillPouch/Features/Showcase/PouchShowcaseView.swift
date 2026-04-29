@@ -14,7 +14,6 @@ struct PouchShowcaseView: View {
     @State private var resetToken: Int = 0
     @State private var pills: [PillBody] = []
     @State private var pouchState: PouchState = .sealed
-    @State private var tearStyle: TearStyle = .lift
 
     @State private var motionMode: MotionEngineMock.Mode = .auto
     @State private var manualGravityX: Double = 0
@@ -32,8 +31,7 @@ struct PouchShowcaseView: View {
                     state: $pouchState,
                     slot: slot,
                     pills: $pills,
-                    gravity: motionEngine.gravity,
-                    tearStyle: tearStyle
+                    gravity: motionEngine.gravity
                 )
                 .frame(width: pouchSize.width, height: pouchSize.height)
                 .id(resetToken)
@@ -118,13 +116,6 @@ struct PouchShowcaseView: View {
                 .font(PPFont.caption)
                 .buttonStyle(.bordered)
             }
-
-            Picker("Tear style", selection: $tearStyle) {
-                ForEach(TearStyle.allCases) { style in
-                    Text(style.displayName).tag(style)
-                }
-            }
-            .pickerStyle(.segmented)
 
             if motionEngine is MotionEngineMock {
                 motionControls

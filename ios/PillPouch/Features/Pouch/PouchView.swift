@@ -15,8 +15,6 @@ struct PouchView: View {
     @Binding var pills: [PillBody]
     /// 화면 좌표계 (x: 우, y: 하) 단위 중력 벡터. ShowcaseView/Today 가 MotionEngine 으로 주입.
     let gravity: SIMD2<Double>
-    /// 찢기 시각 스타일 비교용. Showcase 가 토글, Today 는 결정 후 고정.
-    var tearStyle: TearStyle = .lift
 
     @State private var lastTickDate: Date?
     @State private var haptics = PouchHapticDriver()
@@ -34,7 +32,6 @@ struct PouchView: View {
                     }
                     .opacity(0.96)
                     paperLayerStack
-                    PouchTearLayer(state: state, slot: slot, style: tearStyle)
                 }
                 .contentShape(Rectangle())
                 .gesture(tearGesture(width: geo.size.width, perforationY: PouchView.perforationY(in: geo.size)))
@@ -52,20 +49,15 @@ struct PouchView: View {
         }
     }
 
-    /// PaperLayer 합성 — `.lift` 면 위/아래 두 조각 분리해 위쪽 transform,
-    /// `.gap` 이면 단일 PaperLayer (TearLayer 가 가운데 어두운 틈 그림).
+    /// PaperLayer 합성 — 위/아래 두 조각 분리, 위쪽이 progress 따라 transform.
     /// PaperTop/Bottom 은 같은 seed JaggedTearPath mask 로 단면 정확히 맞물림.
     @ViewBuilder
     private var paperLayerStack: some View {
-        if tearStyle == .lift {
-            PouchPaperBottom(slot: slot, tearProgress: tearProgress)
-            PouchPaperTop(slot: slot, tearProgress: tearProgress)
-                .offset(y: -tearLiftDistance)
-                .rotationEffect(.degrees(tearTiltAngle), anchor: .top)
-                .shadow(color: .black.opacity(tearShadowOpacity), radius: 4, x: 0, y: 2)
-        } else {
-            PouchPaperLayer(slot: slot)
-        }
+        PouchPaperBottom(slot: slot, tearProgress: tearProgress)
+        PouchPaperTop(slot: slot, tearProgress: tearProgress)
+            .offset(y: -tearLiftDistance)
+            .rotationEffect(.degrees(tearTiltAngle), anchor: .top)
+            .shadow(color: .black.opacity(tearShadowOpacity), radius: 4, x: 0, y: 2)
     }
 
     private var tearProgress: Double {
