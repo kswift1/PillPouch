@@ -590,3 +590,133 @@ docs: append Stage 3 polish v4 section
 ```
 
 ## 승인 ⛔ (5차)
+
+---
+
+# 추가: Polish v5 — Rolling-without-slipping (현실 물리 모델)
+
+## 트리거
+
+작업지시자 5차 검증:
+1. 좌/우 모두 회전하지만 **뺑글뺑글 비현실적** — 단순 기울임에 알약이 빙빙 돌 이유 없음
+2. 이동 여전히 둔함
+
+작업지시자 추가 질문: "벽 따라 회전 어떤 의도였나? 현실 물리 모델은?"
+
+## 진단
+
+### Wall spin impulse 모델의 한계
+
+기존 모델 (v4까지): 충돌 시점에 `dy * wallSpinTransfer` 한 번에 큰 spin 부여.
+
+문제:
+- 마찰의 본질은 회전 **억제 + 미끄럼 줄이기** 인데 매 충돌마다 spin **부여** — 잘못된 방향
+- magnitude 150 deg/s + angularDamping 0.95 (1초당 5%만 감쇠) → 1초 후 75도, 2초 후 113도 회전. 뺑글뺑글
+- 물리적 근거 없는 부호 결정 (좌측+dy → 시계방향 등)
+
+### 이동 둔함
+
+gScale 1000 + damping 0.92 → terminal velocity 208pt/s @gravity=1.0. 일상 기울임(0.5)에서 104pt/s. 봉지 가로지르는 데 ~2초. 사용자 체감 둔함.
+
+## 변경 — 옵션 C "단순 현실 모델" 채택
+
+작업지시자가 옵션 C 선택. Rolling-without-slipping 의 단순화 버전:
+- **자유 비행**: 회전 없음 (강한 angularDamping 으로 즉시 죽임)
+- **벽 contact**: 매 tick `ω → v_tangent / r` lerp 수렴
+- **충돌**: 약한 tangential transfer 만 유지
+
+### 상수 변경
+
+| 상수 | 전 | 후 | 의미 |
+|---|---|---|---|
+| `gScale` | 1000 | **1500** | 이동 활발 |
+| `damping` | 0.92 | **0.95** | terminal multiplier 12.5 → 20 (가속 + 빠른 도달) |
+| `restitution` | 0.3 | **0.2** | bounce 작게, 안정 정착 |
+| `angularDamping` | 0.95 | **0.80** | 자유 비행 회전 0.5초 안에 죽음 |
+| `pairSpinTransfer` | 2.5 | **0.3** | 충돌 회전 약화 |
+| `wallSpinTransfer` | 1.5 | **제거** | impulse 모델 폐기 |
+| `wallSpinLerp` (신규) | — | **0.3** | 매 tick ω → target 30% lerp |
+| `wallContactEpsilon` (신규) | — | **1.0pt** | reflect 후 벽 붙은 알약 검출 |
+
+### resolveBoundsCollision 재작성
+
+```swift
+// 1) 침범 처리 (기존)
+if pills[i].position.x - r < bounds.minX {
+    pills[i].position.x = bounds.minX + r
+    pills[i].velocity.dx = -pills[i].velocity.dx * restitution
+}
+// ... 4면 동일
+
+// 2) Contact rolling — 매 tick 검사
+let onLeft   = pills[i].position.x - r <= bounds.minX + wallContactEpsilon
+let onRight  = pills[i].position.x + r >= bounds.maxX - wallContactEpsilon
+let onTop    = pills[i].position.y - r <= bounds.minY + wallContactEpsilon
+let onBottom = pills[i].position.y + r >= bounds.maxY - wallContactEpsilon
+
+var targetOmega: Double? = nil
+if onLeft  { targetOmega =  v.dy / radius * toDeg }   // 좌측: 시계방향(+)
+if onRight { targetOmega = -v.dy / radius * toDeg }   // 우측: 반시계(-)
+if onBottom { targetOmega =  v.dx / radius * toDeg }  // 하단: 시계방향
+if onTop    { targetOmega = -v.dx / radius * toDeg }  // 상단: 반시계
+// corner contact 시 bottom > top > side 우선
+
+if let target = targetOmega {
+    pills[i].angularVelocity += (target - pills[i].angularVelocity) * wallSpinLerp
+}
+```
+
+### 효과
+
+| 시나리오 | 전 (v4) | 후 (v5 / C 모델) |
+|---|---|---|
+| 봉지 가운데 자유 비행 | 충돌 spin 누적, angularDamping 약해서 천천히 정지 | 회전 즉시 죽음 (0.5초 안) |
+| 좌측으로 기울여 알약이 좌측 벽 따라 내려감 | 충돌 instant 큰 spin → 뺑글뺑글 | 매 tick `ω = dy/r` 로 수렴 → 자연스럽게 굴러감 |
+| 정지 시 회전 | 잔여 spin 으로 천천히 회전 지속 | translation 정지 → contact 사라짐 + damping 으로 즉시 정지 |
+| 두 알약 스침 | spin 250 deg/s | spin 30 deg/s, 살짝만 흔들림 |
+
+### 신규 / 갱신 테스트 (Rotation Suite)
+
+| 케이스 | 검증 |
+|---|---|
+| `angularDamping이_angularVelocity를_감쇠시킨다` | 100 → 80 (0.80 감쇠) |
+| `좌측_벽_contact_시_target_omega로_lerp` | dy=30 → target 78.13, lerp 0.3 → 23.44 |
+| `우측_벽_contact_시_반대_부호_target` | -23.44 |
+| `좌측_벽_지속_contact_시_target_omega로_수렴` (신규) | 30 tick 반복 → target * 0.3 < ω < target |
+| `자유_비행_시_wall_contact_없으면_lerp_미적용` (신규) | 봉지 가운데 알약 ω 변화 0 |
+| `스쳐_지나가는_충돌시_양쪽_반대_부호_spin` | pairSpinTransfer 0.3 — 부호 검증만 (통과) |
+
+### 다른 갱신 테스트
+
+- `damping이_매_tick_velocity를_감소시킨다`: 100 * 0.92 → 100 * 0.95 = 95
+- `velocity가_dt만큼_position에_적용된다`: 60 * 0.95 / 60 = 0.95 변화
+- bounds collision 4개 velocity expected: ±15 → ±10 (restitution 0.3 → 0.2)
+- `중력_없을때_60틱_후_velocity_거의_0` → `120틱` (damping 약해진 만큼 더 길게)
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (25/25, 신규 2개 추가)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| 회전 모델 | **Rolling lerp (옵션 C)** | 작업지시자 결정. impulse 보다 현실적이면서 코드 ~10줄 |
+| Wall ω target | `v_tangent / r * (180/π)` | rolling-without-slipping kinematic constraint. 알약이 진짜 굴러가는 효과 |
+| Lerp factor | **0.3** | 매 tick 30% 수렴 → 5 tick 후 거의 target 도달 (0.083초). 빠른 자연 전이 |
+| 시각 반지름 사용 (`pill.radius`) vs 충돌 반지름 (`r`) | 시각 반지름 | 시각상 굴러가는 속도와 일치. collision r=13.2 사용 시 회전 너무 빠름 |
+| Corner contact 우선순위 | bottom > top > side | 봉지 바닥 굴러가는 게 시각 dominant |
+| `gScale` 1500 + `damping` 0.95 | 결합 | terminal multiplier 20 — 즉각 반응 + 빠른 가속 |
+| `restitution` 0.2 | bounce 줄임 | 부딪히고 즉시 안정 — 약봉지 거동 정합 |
+
+## 추가 커밋
+
+```
+feat(ios): adopt rolling-without-slipping wall contact model and tune motion responsiveness (#25 stage3 polish v5)
+test(ios): cover wall contact lerp, free-flight no-rotation, and updated damping/restitution
+docs: append Stage 3 polish v5 section
+```
+
+## 승인 ⛔ (6차)
