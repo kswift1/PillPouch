@@ -803,3 +803,115 @@ docs: append Stage 3 polish v6 section
 ```
 
 ## 승인 ⛔ (7차)
+
+---
+
+# 추가: Polish v7 — Gravity-aware Stack Breaking (모든 방향 일반화)
+
+## 트리거
+
+작업지시자 7차 검증: v6 의 stack breaking 이 **vertical stack(아래 방향)에서만 동작**. 좌/우/위 방향으로 gravity 가 향할 때 같은 문제 재현 — 알약이 한쪽 벽 따라 column 형성.
+
+## 진단
+
+v6 코드:
+```swift
+if abs(nx) < verticalStackBreakingThreshold {  // |nx|<0.3 — 수직 stack 만
+    pills[upperIdx].velocity.dx += nudge * sign  // x 방향만
+}
+```
+
+가정: stack 은 항상 vertical (gravity (0,1)). gravity 좌/우/위/대각 방향이면:
+- gravity (-1, 0) → 알약 좌측 벽 따라 horizontal stack. normal `(1, 0)` → `|nx|=1 > 0.3` → **trigger 안 됨**
+- 좌측 벽 column 무한 유지
+
+## 일반화 원리
+
+Stack 의 본질: **두 알약을 잇는 normal 이 gravity 와 평행** (어느 방향이든).
+
+```
+stack ⇔ |normal · ĝ| > 0.95 (cos 18° 이내)
+nudge 방향 = gravity 의 perpendicular = (-ĝy, ĝx)
+upper 알약 = pos · ĝ 가 작은 쪽 (gravity 반대 방향에 위치)
+```
+
+## 변경
+
+### 함수 시그니처
+
+`resolvePairCollisions(&pills)` → **`resolvePairCollisions(&pills, gravity:)`**.
+
+`tick` 에서 호출 시 gravity 전달.
+
+### Stack-breaking 로직 일반화
+
+```swift
+let gNorm = sqrt(gravity.x² + gravity.y²)
+let hasGravity = gNorm > 0.1
+let (gx, gy) = (gravity.x/gNorm, gravity.y/gNorm)
+
+if hasGravity {
+    let dotNG = nx*gx + ny*gy
+    if abs(dotNG) > stackParallelDotThreshold {  // 0.95
+        // upper = pos · ĝ 작은 쪽
+        let upperIdx = (pos_i · ĝ) < (pos_j · ĝ) ? i : j
+        let perpX = -gy, perpY = gx
+        let sign = id.hash & 1 ? +1 : -1
+        upper.velocity += nudge * sign * (perpX, perpY)
+        lower.velocity -= nudge * sign * (perpX, perpY)
+    }
+}
+```
+
+### 검증 케이스 (각 gravity 방향)
+
+| Gravity | Stack normal | Nudge 방향 |
+|---|---|---|
+| (0, 1) 아래 | (0, ±1) | ±x (horizontal) |
+| (-1, 0) 좌 | (±1, 0) | ±y (vertical) |
+| (0, -1) 위 | (0, ±1) | ±x |
+| (1, 1) 대각 | (0.707, 0.707) | (-0.707, 0.707) — dx, dy 반대 부호 |
+
+### 상수 변경
+
+| 전 | 후 |
+|---|---|
+| `verticalStackBreakingThreshold: 0.3` (|nx|) | `stackParallelDotThreshold: 0.95` (|n·ĝ|) |
+| `verticalStackBreakingNudge: 12` | `stackBreakingNudge: 12` (이름만) |
+
+### 테스트 5개 (기존 2개 대체)
+
+| 케이스 | 검증 |
+|---|---|
+| `gravity_아래_방향_시_수직_stack_horizontal_kick` | dx 반대 부호, dy ≈ 0 |
+| `gravity_좌측_방향_시_수평_stack_vertical_kick` | dy 반대 부호, dx ≈ 0 |
+| `gravity_대각_방향_시_perpendicular_nudge` | dx·dy < 0 (perpendicular 부호 패턴) |
+| `gravity_방향과_normal이_perpendicular면_stack_breaking_미적용` | 수평 알약 + 아래 gravity → nudge X |
+| `gravity가_거의_0이면_stack_breaking_미적용` | gravity (0, 0.05) → guard 동작 |
+
+기존 `정확히_같은_위치`, `정면_충돌`, `서로_멀어지는`, `스쳐_지나가는`, `두_알약이_겹치면_분리된다`, `멀리_떨어진_알약은_변화_없음`, `한_개만_있으면_변화_없음` — gravity 인자만 추가, 동작 동일 통과.
+
+## 검증
+
+```
+** TEST SUCCEEDED ** (28/28)
+```
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| 일반화 기준 | `|n · ĝ|` (절대값) | normal 부호와 무관 — 위/아래 stack 모두 detect |
+| Threshold 0.95 | cos 18° | v6 의 0.3 (|nx|) 와 동등 — 약간의 angle tolerance |
+| Upper 판별 | `pos · ĝ` 작은 쪽 | gravity 반대 방향 = "위" 의 일반화 |
+| `gNorm > 0.1` 가드 | 작은 gravity skip | mock motion 의 transition 시점에서 gravity 거의 0 일 때 의미 없음 |
+
+## 추가 커밋
+
+```
+refactor(ios): generalize stack-breaking to any gravity direction (#25 stage3 polish v7)
+test(ios): cover stack breaking for down/left/diagonal gravity and zero-gravity guard
+docs: append Stage 3 polish v7 section
+```
+
+## 승인 ⛔ (8차)
