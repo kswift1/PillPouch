@@ -5,26 +5,27 @@
 
 import SwiftUI
 
-/// 봉지 안 알약 1개의 데이터. Stage 2: 정적 위치. Stage 3: velocity/충돌 추가. Stage 5: isFalling 추가.
+/// 봉지 안 알약 1개의 데이터. 알약 시각은 PR #22로 머지된 카테고리 시드 자산을 그대로 사용 —
+/// categoryKey 가 형태/색/크기를 모두 결정. Categories 폴더는 namespace 미설정이라 `Image(categoryKey)` 로 직접 접근.
+/// Stage 2: 정적 위치. Stage 3: velocity/충돌 추가. Stage 5: isFalling 추가.
 struct PillBody: Identifiable, Equatable {
     let id: UUID
-    var capsuleType: CapsuleType
-    var color: Color
+    /// `Supplement.categoryKey` 와 매핑되는 lowerCamel id. `Categories/{key}` Asset Catalog 키와 1:1.
+    var categoryKey: String
     var position: CGPoint
+    /// 시각 frame 의 절반. `frame = radius * 2 * sizeMultiplier` 로 표시.
     var radius: CGFloat
     var rotation: Double
 
     init(
         id: UUID = UUID(),
-        capsuleType: CapsuleType,
-        color: Color,
+        categoryKey: String,
         position: CGPoint,
-        radius: CGFloat = 14,
+        radius: CGFloat = 16,
         rotation: Double = 0
     ) {
         self.id = id
-        self.capsuleType = capsuleType
-        self.color = color
+        self.categoryKey = categoryKey
         self.position = position
         self.radius = radius
         self.rotation = rotation
@@ -32,13 +33,12 @@ struct PillBody: Identifiable, Equatable {
 }
 
 extension PillBody {
-    /// Showcase 데모용 알약 mock 생성. capsuleType이 mix면 6종 round-robin.
-    /// 봉지 내부 영역(`bounds`)에 넘치지 않게 자동 배치 (perforation 아래 ~ 하단 heat-seal 위).
-    /// `bounds`는 봉지 로컬 좌표계. radius는 24pt 기준 알약 크기.
+    /// Showcase 데모용 알약 mock 생성. mix 에 따라 카테고리 round-robin 또는 단일.
+    /// 봉지 내부 영역(`bounds`)에 자동 배치 (perforation 아래 ~ 하단 heat-seal 위, 봉지 바닥 정렬).
     static func mock(count: Int, mix: PillMix, bounds: CGRect) -> [PillBody] {
         guard count > 0 else { return [] }
 
-        let radius: CGFloat = 13
+        let radius: CGFloat = 16
         let spacing: CGFloat = 2
         let cellSize = radius * 2 + spacing
 
@@ -56,12 +56,10 @@ extension PillBody {
             let col = index % cols
             let x = xStart + CGFloat(col) * cellSize
             let y = yStart + CGFloat(row) * cellSize
-            let type = mix.capsuleType(for: index)
-            let color = mix.color(for: index, type: type)
+            let key = mix.categoryKey(for: index)
             let rot = (Double(index) * 47.0).truncatingRemainder(dividingBy: 60.0) - 30.0
             return PillBody(
-                capsuleType: type,
-                color: color,
+                categoryKey: key,
                 position: CGPoint(x: x, y: y),
                 radius: radius,
                 rotation: rot
@@ -70,79 +68,65 @@ extension PillBody {
     }
 }
 
-/// Showcase 컨트롤이 사용하는 알약 조합 모드.
+/// Showcase 컨트롤이 사용하는 알약 조합. 카테고리 시드 16종 (PR #22) 기반.
 enum PillMix: String, CaseIterable, Identifiable {
-    /// 6종 (liquid 제외 5종 + gummy) 섞어 round-robin.
+    /// 혼합 — 16종 round-robin.
     case mixed
 
-    /// 모두 정제.
-    case allTablet
+    /// 비타민 4종 — vitaminD / vitaminC / vitaminB / multivitamin.
+    case vitamins
 
-    /// 모두 경질 캡슐.
-    case allCapsule
+    /// 오메가/지용성 4종 — omega3 / lutein / coq10 / collagen.
+    case omega
 
-    /// 모두 연질 캡슐 (오메가3 톤).
-    case allSoftgel
+    /// 미네랄 4종 — calcium / magnesium / iron / zinc.
+    case minerals
 
-    /// 모두 가루.
-    case allPowder
+    /// 캡슐 3종 — probiotics / milkThistle / glucosamine.
+    case capsules
 
-    /// 모두 젤리.
-    case allGummy
+    /// 단일 — omega3 만.
+    case singleOmega3
+
+    /// 단일 — vitaminD 만.
+    case singleVitaminD
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .mixed:      "혼합"
-        case .allTablet:  "정제"
-        case .allCapsule: "캡슐"
-        case .allSoftgel: "연질"
-        case .allPowder:  "가루"
-        case .allGummy:   "젤리"
+        case .mixed:          "혼합"
+        case .vitamins:       "비타민"
+        case .omega:          "오메가"
+        case .minerals:       "미네랄"
+        case .capsules:       "캡슐"
+        case .singleOmega3:   "오메가3"
+        case .singleVitaminD: "비타민D"
         }
     }
 
-    func capsuleType(for index: Int) -> CapsuleType {
+    func categoryKey(for index: Int) -> String {
+        let pool = keys
+        return pool[index % pool.count]
+    }
+
+    private var keys: [String] {
         switch self {
-        case .mixed:      Self.mixedRotation[index % Self.mixedRotation.count]
-        case .allTablet:  .tablet
-        case .allCapsule: .capsule
-        case .allSoftgel: .softgel
-        case .allPowder:  .powder
-        case .allGummy:   .gummy
+        case .mixed: Self.allCategoryKeys
+        case .vitamins:       ["vitaminD", "vitaminC", "vitaminB", "multivitamin"]
+        case .omega:          ["omega3", "lutein", "coq10", "collagen"]
+        case .minerals:       ["calcium", "magnesium", "iron", "zinc"]
+        case .capsules:       ["probiotics", "milkThistle", "glucosamine"]
+        case .singleOmega3:   ["omega3"]
+        case .singleVitaminD: ["vitaminD"]
         }
     }
 
-    /// warm 약품 톤 6종 — 봉지/배경 cream 팔레트와 정합.
-    func color(for index: Int, type: CapsuleType) -> Color {
-        switch type {
-        case .tablet:  Self.tabletColors[index % Self.tabletColors.count]
-        case .softgel: Color(red: 0.91, green: 0.60, blue: 0.47)
-        case .capsule: Self.capsuleColors[index % Self.capsuleColors.count]
-        case .powder:  Color(red: 0.78, green: 0.75, blue: 0.69)
-        case .liquid:  Color(red: 0.78, green: 0.75, blue: 0.69)
-        case .gummy:   Self.gummyColors[index % Self.gummyColors.count]
-        }
-    }
-
-    private static let mixedRotation: [CapsuleType] = [
-        .tablet, .capsule, .softgel, .gummy, .powder, .tablet,
-    ]
-
-    private static let tabletColors: [Color] = [
-        Color(red: 0.97, green: 0.95, blue: 0.92),
-        Color(red: 0.91, green: 0.86, blue: 0.77),
-    ]
-
-    private static let capsuleColors: [Color] = [
-        Color(red: 0.78, green: 0.36, blue: 0.33),
-        Color(red: 0.90, green: 0.71, blue: 0.31),
-    ]
-
-    private static let gummyColors: [Color] = [
-        Color(red: 0.85, green: 0.55, blue: 0.45),
-        Color(red: 0.92, green: 0.74, blue: 0.40),
-        Color(red: 0.55, green: 0.62, blue: 0.45),
+    /// `Resources/category-seed.json` 기준 16종. 시드 변경 시 동기화.
+    private static let allCategoryKeys: [String] = [
+        "omega3", "probiotics", "vitaminC", "multivitamin",
+        "vitaminD", "vitaminB", "milkThistle", "glucosamine",
+        "lutein", "collagen", "magnesium", "calcium",
+        "iron", "zinc", "coq10", "other",
     ]
 }

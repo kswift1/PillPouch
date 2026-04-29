@@ -147,3 +147,98 @@ docs: add Stage 2 report
 - Showcase에 motion 모드 토글 + manual gravity 슬라이더
 
 ## 승인 ⛔
+
+---
+
+# 추가: Redesign (카테고리 자산 사용)
+
+## 트리거
+
+작업지시자 지적: Stage 2 1차 구현이 직전 PR #22 (`375dcb4` — 카테고리 16종 시드 자산)를 참조하지 않음.
+
+확인 결과 카테고리 자산이 **단순 라벨 아이콘이 아니라 실제 알약 일러스트** (omega3 = 노란 softgel, vitaminD = 노란 tablet, probiotics = 흰 capsule, vitaminB = 빨강 큰 capsule-tablet 등 16종). SwiftUI Shape으로 직접 그린 결과물보다 사실성/카테고리 시각 표현 양면에서 우월. 통째 교체.
+
+## 변경 사항
+
+### PillBody 모델 단순화
+- `capsuleType: CapsuleType` 폐기
+- `color: Color` 폐기
+- 신규: `categoryKey: String` — `Supplement.categoryKey` 와 매핑되는 lowerCamel id
+- radius 13 → 16 (자산 시각이 더 풍부해 표시 frame 약간 키움)
+
+### PillView 통째 재작성
+- 기존: switch capsuleType 로 6종 SwiftUI Shape 분기 + RadialGradient + Capsule + Canvas
+- 신규: `Image(pill.categoryKey).resizable().scaledToFit().frame(width: radius * 2.4, height: radius * 2.4)`
+
+코드량 ~120줄 → ~10줄. 카테고리 시드 자산이 형태/색/디테일 모두 baked-in.
+
+### PillMix 재정의
+6종 기본 + 단일 2종 = 7개 옵션:
+- 혼합 (16종 round-robin)
+- 비타민 (vitaminD/C/B + multivitamin)
+- 오메가 (omega3 + lutein + coq10 + collagen)
+- 미네랄 (calcium + magnesium + iron + zinc)
+- 캡슐 (probiotics + milkThistle + glucosamine)
+- 단일 오메가3
+- 단일 비타민D
+
+기존 `.allTablet/.allCapsule/.allSoftgel/.allPowder/.allGummy` 폐기 (capsuleType 기반 → 카테고리 기반 mix로 의미 단위 재구성).
+
+### Asset Catalog 접근 경로
+`Categories/` 폴더 namespace 미설정 (`provides-namespace` X). 따라서 `Image("Categories/omega3")` 가 아닌 **`Image("omega3")`** 로 직접 키 접근. 1차 시도 시 namespace 가정으로 자산 못 찾아 빈 봉지 렌더 발생 → namespace 미설정 발견 후 즉시 수정.
+
+### 폐기된 파일/코드
+- `PillView` 의 6종 SwiftUI Shape 헬퍼 (tabletView/softgelView/capsuleView/powderView/gummyView)
+- `PillMix.color(for:type:)` + `tabletColors` / `capsuleColors` / `gummyColors` 색 팔레트
+- `CapsuleType` enum 자체는 유지 (도메인 모델, brief.md 데이터 모델 스케치 호환)
+
+## 검증
+
+### 빌드
+```
+** BUILD SUCCEEDED **
+```
+
+### 스크린샷 (3장 갱신)
+
+| 파일 | 상태 |
+|---|---|
+| `pills-mixed.png` | 라이트 / 5개 / 혼합 — 카테고리 자산 omega3+probiotics+vitaminC+multivitamin+vitaminD round-robin |
+| `pills-mixed-dark.png` | 다크 / 5개 / 혼합 — 알약 또렷, 다양한 형태 식별 |
+| `pills-vitamins-8.png` | 라이트 / 8개 / 비타민 — vitaminD/C/B/multivitamin 4종 round-robin × 2 |
+| ~~`pills-allcapsule-8.png`~~ | 삭제 (구식 SwiftUI Shape 결과물) |
+
+### 시각 평가 (1차 vs 2차)
+
+| 항목 | 1차 (SwiftUI Shape) | 2차 (카테고리 자산) | 평가 |
+|---|---|---|---|
+| 사실성 | 평면적 / 일러스트풍 | **사실적 3D 톤** (광택, 그림자) | ✅ |
+| 카테고리 시각 표현 | 색만 다름, 형태 동일 | **각 카테고리마다 고유 형태** | ✅ |
+| 시각 다양성 | 형태 6종 | **16종 자산** (작은 tablet/큰 가로/capsule/softgel) | ✅ |
+| Today/Live Activity 호환 | Shape 그대로 사용 가능 | **자산 그대로 사용 가능 (#11 자산 별도 task 불필요)** | ✅ |
+| 알약 ↔ Supplement 연결 | capsuleType (별도 분기 필요) | **categoryKey 직접 매핑 (이미 모델에 있음)** | ✅ |
+| 코드량 | ~120 LOC | **~10 LOC** | ✅ |
+
+남은 미세 issue:
+- 라이트에서 흰/베이지 알약은 봉지 색과 비슷해 흐리게 비침 — 의도된 트레이드오프 유지
+- 자산 비율이 카테고리별로 달라 한 줄에 8개 배치 시 너비 편차 있음 — 자연스러운 다양성으로 작용
+
+## 의사결정 박제
+
+| 결정 | 값 | 이유 |
+|---|---|---|
+| 알약 시각 source | **카테고리 시드 자산 (PR #22)** | 단순 라벨이 아니라 실제 알약 일러스트. SwiftUI Shape보다 사실성·카테고리 표현·코드량 모두 우수 |
+| categoryKey 데이터 흐름 | **`Supplement.categoryKey` 직접 매핑** | 향후 실 데이터 연결 시 변환 0. ADR-0007 정합 |
+| Asset Catalog 접근 | **namespace 없이 `Image(key)` 직접** | Categories 폴더가 namespace 미설정. 호환성 위해 그대로 두되 PillView가 직접 키 접근 |
+| `CapsuleType` enum | **유지** | 도메인 모델 + brief.md 데이터 모델 스케치 호환. 알약 시각 분기 책임은 categoryKey가 인계 |
+| `#11 캡슐 자산` task | **이번 task에서 자연 해소** | 카테고리 시드 자산이 이미 알약 일러스트라 별도 task 불필요. #11 close 또는 scope 재정의 가능 |
+
+## 추가 커밋
+
+```
+feat(ios): redo Stage 2 pills using category seed assets (#22)
+docs: update Stage 2 screenshots with category assets
+docs: append Stage 2 redesign section to report
+```
+
+## 승인 ⛔ (재)
