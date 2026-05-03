@@ -1,13 +1,12 @@
 # Pill Pouch — V1 One-pager Brief
 
 > **App Name:** Pill Pouch
-> **Status:** Draft v0.4 (2026-04-27 update)
+> **Status:** Draft v0.6 (2026-05-03 update)
 > **Owner:** Solo
-> **Major changes from v0.3:**
-> - 앱 이름 **Pill Pouch** 확정
-> - 기술 스택: SwiftUI + TCA → **SwiftUI 네이티브 + SwiftData**
-> - V1.0에 **백엔드(Push to Start) 포함** 결정 (컨셉 완성형 출시)
-> - ActivityKit 사실 업데이트 (iOS 17.2 PTS / iOS 18 Broadcast)
+> **Major changes from v0.5:**
+> - **SoT 2층 분리** — 정체성 layer 분리해 [identity.md](identity.md) 신설 ([ADR-0010](adr/0010-sot-identity-brief-two-layer.md))
+> - **§핵심 가설 어휘 정련** — 단품 봉지 어휘 제거, 다층 누적 포괄 (layer-agnostic)
+> - **§한 줄 컨셉 직후 정체성 SoT cross-link 추가**
 
 ---
 
@@ -21,12 +20,14 @@
 
 **컨셉 완성형:** *앱을 한 번도 열지 않아도 락스크린에 매일 봉지 띠가 자동으로 등장한다.* (Push to Start 기반)
 
+**정체성 SoT (본질·차별점·카테고리 위치·비전):** [identity.md](identity.md) — 외부 질문/마케팅/시안 평가 시 닻.
+
 ---
 
 ## 핵심 가설
 
 > **영양제를 챙겨 먹는 사람들의 진짜 페인포인트는 '먹었나 안 먹었나 헷갈리는 인지 부담'이다.**
-> **명확한 시각적 증거(찢긴 약봉지)와 누적 기록을 보여주면, 그 인지 부담이 사라지고 영양제 챙김 자체가 더 지속된다.**
+> **명확한 시각적 증거와 누적 기록을 보여주면, 그 인지 부담이 사라지고 영양제 챙김 자체가 더 지속된다.**
 
 이 가설이 모든 디자인·기능 결정의 기준이다. 시안을 평가할 때 "예쁜가?"가 아니라 **"이 가설을 강화하는가?"** 로 본다.
 
@@ -484,6 +485,11 @@ V1.0에 백엔드 포함 결정 시 처음 부딪히는 것들. 일정에 미리
 ---
 
 ## 변경 로그
+
+### v0.6 (2026-05-03)
+- **SoT 2층 분리** — 정체성 layer 분리해 [identity.md](identity.md) 신설 ([ADR-0010](adr/0010-sot-identity-brief-two-layer.md))
+- **§핵심 가설 어휘 정련** — *"(찢긴 약봉지)"* 괄호 제거. 가설을 layer-agnostic으로 정련 (단품 봉지 → 시각 증거 일반, 주간/월간 뷰 등 다층 누적 포괄)
+- **§한 줄 컨셉 직후 정체성 SoT cross-link 추가** — Identity layer 닻 명시
 
 ### v0.5 (2026-04-29)
 - **찢기 인터랙션 위치 이동**: 봉지 윗부분 가로 드래그 → **중간 perforation 라인 좌→우 swipe** ([ADR-0009](adr/0009-tear-gesture-middle-perforation.md))

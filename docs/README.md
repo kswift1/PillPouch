@@ -3,7 +3,8 @@
 이 폴더는 Pill Pouch V1 개발의 단일 소스(SoT)다. 모든 기획·결정·작업 진행은 여기서 일어난다.
 
 ## 핵심 문서
-- [`brief.md`](brief.md) — **기획서 v0.4 (헌법, 변경은 PR + ADR 필수)**
+- [`identity.md`](identity.md) — **정체성 v1.0 (앱 전 생애 SoT, 본질 변경 = 새 프로젝트)**
+- [`brief.md`](brief.md) — **V1 기획 v0.6 (변경은 PR + ADR 필수)**
 - [`architecture.md`](architecture.md) — 시스템 다이어그램, 컴포넌트 책임
 - [`data-model.md`](data-model.md) — SwiftData 모델 + 서버 SQLite 스키마
 - [`api.md`](api.md) — 클라↔서버 엔드포인트 명세
