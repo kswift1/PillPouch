@@ -1,9 +1,9 @@
 //
-//  PouchTearLayer.swift
+//  JaggedTearPath.swift
 //  PillPouch
 //
-//  찢김 시각은 PouchPaperTop/Bottom 의 JaggedTearPath mask 가 담당.
-//  이 파일은 두 mask 가 공유하는 Shape + RNG 만 보유.
+//  PouchPaperTop / PouchPaperBottom mask 로 사용되는 jagged 단면 Shape.
+//  양쪽이 같은 seed 로 path 공유 → 위/아래 단면 정확히 맞물림.
 //
 
 import SwiftUI
