@@ -37,12 +37,24 @@ struct PouchView: View {
                     .opacity(0.96)
                     if listMode {
                         ForEach(pills) { pill in
-                            Text(PillCategoryDisplayName.label(for: pill.categoryKey))
-                                .font(PPFont.body)
-                                .foregroundStyle(PPColor.textPrimary)
-                                .position(x: pill.position.x + Const.labelOffsetX, y: pill.position.y)
-                                .transition(.opacity.combined(with: .offset(x: -8, y: 0)))
-                                .allowsHitTesting(false)
+                            HStack(spacing: 0) {
+                                Text("\(PillCategoryDisplayName.label(for: pill.categoryKey)) · \(pill.dose)정")
+                                    .font(PPFont.body)
+                                    .foregroundStyle(PPColor.textPrimary)
+                                Spacer(minLength: 4)
+                                if let takenAt = pill.takenAt {
+                                    Text(takenAt, format: .dateTime.hour().minute())
+                                        .font(.system(.callout, design: .monospaced))
+                                        .foregroundStyle(PPColor.textSecondary)
+                                }
+                            }
+                            .frame(width: Const.labelWidth)
+                            .position(
+                                x: pill.position.x + Const.labelStartOffset + Const.labelWidth / 2,
+                                y: pill.position.y
+                            )
+                            .transition(.opacity.combined(with: .offset(x: -8, y: 0)))
+                            .allowsHitTesting(false)
                         }
                     }
                     paperLayerStack
@@ -124,9 +136,12 @@ struct PouchView: View {
         // 봉합 시 복원 위해 mock 위치 백업
         pillsBeforeTear = pills
         listMode = true
+        // 한 봉지 = 한 슬롯 동시 복용 — 모든 알약 같은 takenAt.
+        let takenAt = Date()
         for i in pills.indices {
             let target = listSlotPosition(index: i, count: pills.count, bounds: bounds)
             let delay = Double(i) * Const.listStaggerDelay
+            pills[i].takenAt = takenAt
             withAnimation(.spring(response: 0.55, dampingFraction: 0.72).delay(delay)) {
                 pills[i].position = target
                 pills[i].rotation = 0
@@ -141,6 +156,7 @@ struct PouchView: View {
         guard !pillsBeforeTear.isEmpty else { return }
         let restored = pillsBeforeTear
         for i in pills.indices where i < restored.count {
+            pills[i].takenAt = nil
             withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
                 pills[i].position = restored[i].position
                 pills[i].rotation = restored[i].rotation
@@ -230,7 +246,8 @@ struct PouchView: View {
         static let listStaggerDelay: Double = 0.08
         static let listMinRowSpacing: CGFloat = 36
         static let listLeftMargin: CGFloat = 30
-        static let labelOffsetX: CGFloat = 60
+        static let labelStartOffset: CGFloat = 30
+        static let labelWidth: CGFloat = 180
         static let paperLiftAway: CGFloat = 30
     }
 }

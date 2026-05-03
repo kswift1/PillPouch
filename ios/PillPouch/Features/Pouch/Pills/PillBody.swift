@@ -21,6 +21,10 @@ struct PillBody: Identifiable, Equatable {
     var rotation: Double
     /// 도/초 (deg/s). 충돌/벽 마찰로 부여, angularDamping 으로 감쇠.
     var angularVelocity: Double
+    /// list mode 라벨 회차 ("1정", "2정"). 기본 1.
+    var dose: Int
+    /// torn 시 PouchView 가 set. nil 이면 시각 미표시.
+    var takenAt: Date?
 
     init(
         id: UUID = UUID(),
@@ -29,7 +33,9 @@ struct PillBody: Identifiable, Equatable {
         velocity: CGVector = .zero,
         radius: CGFloat = 22,
         rotation: Double = 0,
-        angularVelocity: Double = 0
+        angularVelocity: Double = 0,
+        dose: Int = 1,
+        takenAt: Date? = nil
     ) {
         self.id = id
         self.categoryKey = categoryKey
@@ -38,6 +44,8 @@ struct PillBody: Identifiable, Equatable {
         self.radius = radius
         self.rotation = rotation
         self.angularVelocity = angularVelocity
+        self.dose = dose
+        self.takenAt = takenAt
     }
 }
 
@@ -70,12 +78,15 @@ extension PillBody {
             // 시작 시 미세 horizontal jitter — gravity 적용 시 자연 spread.
             // index 기반 deterministic, ±8 pt/s 범위.
             let dxJitter = CGFloat(((index &* 73) % 17) - 8)
+            // 1/3 알약은 2정, 나머지 1정 — list mode 라벨 다양성 mock.
+            let dose = index.isMultiple(of: 3) ? 2 : 1
             return PillBody(
                 categoryKey: key,
                 position: CGPoint(x: x, y: y),
                 velocity: CGVector(dx: dxJitter, dy: 0),
                 radius: radius,
-                rotation: rot
+                rotation: rot,
+                dose: dose
             )
         }
     }
