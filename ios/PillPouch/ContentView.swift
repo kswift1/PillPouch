@@ -8,8 +8,7 @@ import SwiftData
 
 struct ContentView: View {
     var body: some View {
-        Text("Pill Pouch")
-            .font(.title)
+        PouchShowcaseView()
     }
 }
 
