@@ -32,7 +32,7 @@
 - ❌ Non-goals(`docs/brief.md` §Non-goals)에 해당하는 항목 추가 — TCA, Carousel, 단순 탭 체크 등
 - ❌ Bundle ID에 대문자 (Topic Mismatch 위험, 기획서 경고)
 - ❌ `docs/feedback/` 폴더에 AI가 글 쓰기 — 작업지시자 전용
-- ❌ 기획서(`docs/brief.md`) 직접 수정 — 변경은 PR + ADR 링크 필수
+- ❌ SoT(`docs/identity.md`, `docs/brief.md`) 직접 수정 — 변경은 PR + ADR 링크 필수 (identity.md 본질 변경은 작업지시자 직접 결정)
 - ❌ ADR을 Accepted 후 수정 — 결정이 바뀌면 새 ADR로 Supersede
 - ❌ APNs `.p8`, `.env` 파일 git에 추가 (`.gitignore` 강제)
 
@@ -143,9 +143,18 @@ git switch -c local/task{이슈번호}
 - APNs `.p8` — Fly secrets에만 보관. 원본은 1Password/Keychain.
 - `*.p8`, `.env*` 모두 `.gitignore` 강제.
 
-## 기획서 변경 룰
+## SoT 변경 룰 (2층)
 
-1. `docs/brief.md` 직접 수정 X
+SoT는 두 layer로 분리됨 ([ADR-0010](docs/adr/0010-sot-identity-brief-two-layer.md)).
+
+### `docs/identity.md` (정체성 — 앱 전 생애)
+1. 직접 수정 절대 X
+2. 본질(Why) 변경 = 사실상 새 프로젝트 — 작업지시자 직접 결정만, ADR 선행
+3. 차별점 / 비전 / 약속 변경 = ADR + 작업지시자 승인
+4. 변경 시 brief.md 양방향 점검 (정체성 변경 → 표면 기능 영향)
+
+### `docs/brief.md` (V1 기획 — V1 한정)
+1. 직접 수정 X
 2. 변경 필요 시 ADR 먼저: `docs/adr/00NN-{slug}.md` (Context/Decision/Consequences)
 3. ADR 승인 후 brief.md PR (변경 로그 섹션 갱신)
 4. 가설 B를 약화하는 변경은 거부 (시각/기능 양쪽)
@@ -153,6 +162,7 @@ git switch -c local/task{이슈번호}
 ## 참고
 
 - 방법론 원본: [edwardkim/rhwp](https://github.com/edwardkim/rhwp) (Hyper-Waterfall)
-- 기획서: [`docs/brief.md`](docs/brief.md)
+- 정체성: [`docs/identity.md`](docs/identity.md)
+- V1 기획: [`docs/brief.md`](docs/brief.md)
 - 마일스톤: [`docs/plan/milestones.md`](docs/plan/milestones.md)
 - 작업 사이클 상세: [`CONTRIBUTING.md`](CONTRIBUTING.md)
