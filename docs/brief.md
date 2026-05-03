@@ -1,12 +1,10 @@
 # Pill Pouch — V1 One-pager Brief
 
 > **App Name:** Pill Pouch
-> **Status:** Draft v0.6 (2026-05-03 update)
+> **Status:** Draft v0.7 (2026-05-03 update)
 > **Owner:** Solo
-> **Major changes from v0.5:**
-> - **SoT 2층 분리** — 정체성 layer 분리해 [identity.md](identity.md) 신설 ([ADR-0010](adr/0010-sot-identity-brief-two-layer.md))
-> - **§핵심 가설 어휘 정련** — 단품 봉지 어휘 제거, 다층 누적 포괄 (layer-agnostic)
-> - **§한 줄 컨셉 직후 정체성 SoT cross-link 추가**
+> **Major changes from v0.6:**
+> - **"middle perforation" 명명 정정** — 실제 위치는 봉지 세로의 ~30% 지점. 핵심 명명 어휘를 **"절취선 라인"** 으로 통일 (Identity §시각 메타포 *"절취선 형태"* 와 정합). 단순 *"perforation"* (디자인 표준 어휘)은 보존.
 
 ---
 
@@ -206,13 +204,13 @@ V1.0 출시 후 즉시 시작. 결과로 V1.1 방향 결정.
 
 **행위 의미:** 사용자가 봉지를 찢어서 약을 꺼내 먹는 실제 행위를 그대로 시뮬레이션. "체크"가 아닌 **"개봉"**.
 
-> [ADR-0009](adr/0009-tear-gesture-middle-perforation.md)에 의해 찢기 위치가 봉지 상단(top edge)에서 **중간 perforation 라인**으로 이동. 시각/인터랙션/알약 흐름이 한 라인에 정렬되어 학습 비용 최소화.
+> [ADR-0009](adr/0009-tear-gesture-middle-perforation.md)에 의해 찢기 위치가 봉지 상단(top edge)에서 **절취선 라인**(봉지 세로의 ~30% 지점)으로 이동. 시각/인터랙션/알약 흐름이 한 라인에 정렬되어 학습 비용 최소화.
 
 #### 시각 단계 (swipe 진행도별)
 
 | 진행도 | 시각 변화 | 햅틱 |
 |---|---|---|
-| **0%** (대기) | 봉지 봉인 상태. 중간에 perforation(좌/우 반원 노치 + 점선) 자명. | — |
+| **0%** (대기) | 봉지 봉인 상태. 절취선(좌/우 반원 노치 + 점선) 자명. | — |
 | **0~30%** | perforation 점선이 살짝 갈라지기 시작 — dash 간격 벌어짐, 좌측부터 진행. | `.soft` 진동 시작 |
 | **30~70%** | perforation 따라 봉지 상하 분리 진행. 윗 부분이 살짝 들림. | 진폭 점진 증가 (5~7회 누적) |
 | **70~100%** | 윗 부분이 위로 들리고, perforation 아래의 알약이 보이거나 흘러나옴. | 진폭 강함 |
@@ -486,13 +484,18 @@ V1.0에 백엔드 포함 결정 시 처음 부딪히는 것들. 일정에 미리
 
 ## 변경 로그
 
+### v0.7 (2026-05-03)
+- **"middle perforation" 명명 정정** — 실제 위치는 봉지 세로의 ~30% 지점 (`PouchGeometry.perforationY = 88pt / 320pt ≈ 27.5%`). "middle"은 부정확.
+- 핵심 명명 어휘를 **"절취선 라인"** 으로 통일 — Identity §시각 메타포 *"절취선 형태"* / *"절취선을 따라 찢어"* 와 정합.
+- 단순 *"perforation"* (디자인 표준 어휘)은 보존. 파일명 `0009-tear-gesture-middle-perforation.md` / 코드 변수명 `perforationY`는 cross-link 보존을 위해 그대로 유지.
+
 ### v0.6 (2026-05-03)
 - **SoT 2층 분리** — 정체성 layer 분리해 [identity.md](identity.md) 신설 ([ADR-0010](adr/0010-sot-identity-brief-two-layer.md))
 - **§핵심 가설 어휘 정련** — *"(찢긴 약봉지)"* 괄호 제거. 가설을 layer-agnostic으로 정련 (단품 봉지 → 시각 증거 일반, 주간/월간 뷰 등 다층 누적 포괄)
 - **§한 줄 컨셉 직후 정체성 SoT cross-link 추가** — Identity layer 닻 명시
 
 ### v0.5 (2026-04-29)
-- **찢기 인터랙션 위치 이동**: 봉지 윗부분 가로 드래그 → **중간 perforation 라인 좌→우 swipe** ([ADR-0009](adr/0009-tear-gesture-middle-perforation.md))
+- **찢기 인터랙션 위치 이동**: 봉지 윗부분 가로 드래그 → **절취선 라인 좌→우 swipe** ([ADR-0009](adr/0009-tear-gesture-middle-perforation.md))
   - 시각/인터랙션/알약 흐름이 한 라인에 정렬되어 학습 비용 최소화
   - perforation = 좌/우 반원 노치 + 점선 (즉각 "여기 뜯음" 인지)
   - 알약은 perforation 아래에 위치 → 찢기 시 자연 낙하
