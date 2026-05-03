@@ -287,10 +287,33 @@ private final class PouchHapticDriver {
 
 extension PouchView {
     /// 봉지 안 알약이 위치 가능한 사각 영역 (perforation 아래 ~ 하단 heat-seal 위).
-    /// `PouchPaperLayer.Const`와 짝을 맞춰야 함.
     static func pillBounds(in size: CGSize) -> CGRect {
-        let topInset: CGFloat = 14 + 38 + 36 + 8 // topSeal + headerCenter + headerDivider + padding
-        let bottomInset: CGFloat = 12 + 6        // bottomSeal + padding
+        PouchGeometry.pillBounds(in: size)
+    }
+
+    /// Middle perforation 라인의 y 좌표.
+    static func perforationY(in size: CGSize) -> CGFloat {
+        PouchGeometry.perforationY(in: size)
+    }
+}
+
+/// 봉지 컴포넌트의 layout geometry. PouchPaperLayer 의 Const 값과 정합 필수.
+/// 단일 source — PouchView, PouchPaperLayer, PaperTop/Bottom, JaggedTearPath 모두 참조.
+enum PouchGeometry {
+    static let topSealHeight: CGFloat = 14
+    static let bottomSealHeight: CGFloat = 12
+    static let headerCenterOffset: CGFloat = 38
+    static let headerDividerOffset: CGFloat = 36
+
+    /// Middle perforation 라인의 y 좌표.
+    static func perforationY(in size: CGSize) -> CGFloat {
+        topSealHeight + headerCenterOffset + headerDividerOffset
+    }
+
+    /// 봉지 안 알약이 위치 가능한 사각 영역.
+    static func pillBounds(in size: CGSize) -> CGRect {
+        let topInset = perforationY(in: size) + 8 // perforation 아래 padding
+        let bottomInset = bottomSealHeight + 6
         let sideInset: CGFloat = 12
         return CGRect(
             x: sideInset,
@@ -298,12 +321,6 @@ extension PouchView {
             width: size.width - sideInset * 2,
             height: size.height - topInset - bottomInset
         )
-    }
-
-    /// Middle perforation 라인의 y 좌표. PouchPaperLayer 의 perforationY 와 동일 식.
-    /// Tear gesture 시작점 hit-test 와 PouchTearLayer zigzag 위치가 공유.
-    static func perforationY(in size: CGSize) -> CGFloat {
-        14 + 38 + 36  // topSeal + headerCenter + headerDivider
     }
 }
 
