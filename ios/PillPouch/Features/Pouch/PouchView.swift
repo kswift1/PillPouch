@@ -21,6 +21,10 @@ struct PouchView: View {
     @State private var lastTearHapticStep: Int = 0
     /// 새 drag 시작 시점의 progress base. drag end 또는 외부 state 변경 시 갱신.
     @State private var dragBaseProgress: Double = 0
+    /// torn 진입 시 true — physics 정지 + 알약 list slot 으로 spring stagger.
+    @State private var listMode: Bool = false
+    /// torn 시 mock 위치 백업 (봉합 시 복귀용).
+    @State private var pillsBeforeTear: [PillBody] = []
 
     var body: some View {
         GeometryReader { geo in
@@ -31,7 +35,20 @@ struct PouchView: View {
                         PillView(pill: pill)
                     }
                     .opacity(0.96)
+                    if listMode {
+                        ForEach(pills) { pill in
+                            Text(PillCategoryDisplayName.label(for: pill.categoryKey))
+                                .font(PPFont.body)
+                                .foregroundStyle(PPColor.textPrimary)
+                                .position(x: pill.position.x + Const.labelOffsetX, y: pill.position.y)
+                                .transition(.opacity.combined(with: .offset(x: -8, y: 0)))
+                                .allowsHitTesting(false)
+                        }
+                    }
                     paperLayerStack
+                        .opacity(listMode ? 0 : 1)
+                        .offset(y: listMode ? -Const.paperLiftAway : 0)
+                        .animation(.easeOut(duration: 0.45), value: listMode)
                 }
                 .contentShape(Rectangle())
                 .gesture(tearGesture(width: geo.size.width, perforationY: PouchView.perforationY(in: geo.size)))
@@ -40,10 +57,12 @@ struct PouchView: View {
                 }
                 .onChange(of: state) { _, newState in
                     syncDragBase(to: newState)
+                    syncListMode(to: newState, bounds: bounds)
                 }
                 .onAppear {
                     haptics.prepare()
                     syncDragBase(to: state)
+                    syncListMode(to: state, bounds: bounds)
                 }
             }
         }
@@ -77,10 +96,67 @@ struct PouchView: View {
         let dt = min(newDate.timeIntervalSince(prev), 1.0 / 30.0) // dt 상한 — 백그라운드 복귀 시 점프 방지
         lastTickDate = newDate
         guard dt > 0 else { return }
+        guard !listMode else { return }  // torn list mode 에선 physics 정지
         let result = PillPhysicsEngine.tick(dt: dt, gravity: gravity, bounds: bounds, pills: &pills)
         if result.shouldPlayHaptic {
             haptics.playImpact(intensity: result.hapticIntensity, at: newDate)
         }
+    }
+
+    // MARK: - List mode (torn 후 알약 + 라벨 리스트)
+
+    private func syncListMode(to newState: PouchState, bounds: CGRect) {
+        switch newState {
+        case .torn:
+            if !listMode {
+                startListLayout(bounds: bounds)
+            }
+        case .sealed:
+            if listMode {
+                restorePhysicsLayout(bounds: bounds)
+            }
+        case .tearing:
+            break
+        }
+    }
+
+    private func startListLayout(bounds: CGRect) {
+        // 봉합 시 복원 위해 mock 위치 백업
+        pillsBeforeTear = pills
+        listMode = true
+        for i in pills.indices {
+            let target = listSlotPosition(index: i, count: pills.count, bounds: bounds)
+            let delay = Double(i) * Const.listStaggerDelay
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.72).delay(delay)) {
+                pills[i].position = target
+                pills[i].rotation = 0
+                pills[i].velocity = .zero
+                pills[i].angularVelocity = 0
+            }
+        }
+    }
+
+    private func restorePhysicsLayout(bounds: CGRect) {
+        listMode = false
+        guard !pillsBeforeTear.isEmpty else { return }
+        let restored = pillsBeforeTear
+        for i in pills.indices where i < restored.count {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) {
+                pills[i].position = restored[i].position
+                pills[i].rotation = restored[i].rotation
+                pills[i].velocity = .zero
+                pills[i].angularVelocity = 0
+            }
+        }
+    }
+
+    /// list slot 위치 — 봉지 안 좌측 정렬, 세로 균등 배치.
+    private func listSlotPosition(index: Int, count: Int, bounds: CGRect) -> CGPoint {
+        let usableHeight = bounds.height
+        let rowSpacing = max(usableHeight / CGFloat(max(count, 1) + 1), Const.listMinRowSpacing)
+        let x = bounds.minX + Const.listLeftMargin
+        let y = bounds.minY + rowSpacing * CGFloat(index + 1)
+        return CGPoint(x: x, y: y)
     }
 
     // MARK: - Tear gesture
@@ -151,6 +227,11 @@ struct PouchView: View {
     private enum Const {
         static let startHitTolerance: CGFloat = 20
         static let tearMargin: CGFloat = 16
+        static let listStaggerDelay: Double = 0.08
+        static let listMinRowSpacing: CGFloat = 36
+        static let listLeftMargin: CGFloat = 30
+        static let labelOffsetX: CGFloat = 60
+        static let paperLiftAway: CGFloat = 30
     }
 }
 

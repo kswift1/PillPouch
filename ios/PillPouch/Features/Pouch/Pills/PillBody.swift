@@ -143,3 +143,29 @@ enum PillMix: String, CaseIterable, Identifiable {
         "iron", "zinc", "coq10", "other",
     ]
 }
+
+/// 카테고리 키 → 한글 라벨. torn 후 list mode 의 알약 옆 라벨로 사용.
+/// CategoryMirror 가 들어오면 그쪽 displayName 우선 사용 — 이건 Showcase mock.
+enum PillCategoryDisplayName {
+    static func label(for key: String) -> String {
+        switch key {
+        case "omega3": "오메가3"
+        case "vitaminD": "비타민 D"
+        case "vitaminC": "비타민 C"
+        case "vitaminB": "비타민 B"
+        case "multivitamin": "종합비타민"
+        case "probiotics": "유산균"
+        case "milkThistle": "밀크씨슬"
+        case "glucosamine": "글루코사민"
+        case "lutein": "루테인"
+        case "collagen": "콜라겐"
+        case "magnesium": "마그네슘"
+        case "calcium": "칼슘"
+        case "iron": "철분"
+        case "zinc": "아연"
+        case "coq10": "코큐텐"
+        case "other": "기타"
+        default: key
+        }
+    }
+}
