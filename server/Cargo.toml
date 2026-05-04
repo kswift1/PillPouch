@@ -13,6 +13,27 @@ rust-version = "1.83"
 license = "Proprietary"
 repository = "https://github.com/kswift1/PillPouch"
 
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+# HTTP framework (ADR-0001)
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["trace", "cors"] }
+# DB (ADR-0001 sqlx compile-time check, ADR-0002 SQLite + Litestream)
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "sqlite", "chrono", "macros", "migrate"] }
+# Serde
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Error
+anyhow = "1"
+thiserror = "2"
+# Logging (ADR-0001)
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+# Datetime (ADR-0001 chrono + chrono-tz)
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+
 [workspace.lints.rust]
 unsafe_code = "forbid"
 

@@ -1,10 +1,10 @@
 # Pill Pouch — V1 One-pager Brief
 
 > **App Name:** Pill Pouch
-> **Status:** Draft v0.7 (2026-05-03 update)
+> **Status:** Draft v0.8 (2026-05-04 update)
 > **Owner:** Solo
-> **Major changes from v0.6:**
-> - **"middle perforation" 명명 정정** — 실제 위치는 봉지 세로의 ~30% 지점. 핵심 명명 어휘를 **"절취선 라인"** 으로 통일 (Identity §시각 메타포 *"절취선 형태"* 와 정합). 단순 *"perforation"* (디자인 표준 어휘)은 보존.
+> **Major changes from v0.7:**
+> - **인구통계 기반 권장 영양제 정보 기능 V1 추가** ([ADR-0011](adr/0011-recommendations-feature.md)) — 5 카테고리(연령대+성별+임산부) × 영양제 5~7종 × 4필드. 백엔드 endpoint + iOS 화면 fetch.
 
 ---
 
@@ -285,6 +285,9 @@ V1.0 출시 후 즉시 시작. 결과로 V1.1 방향 결정.
 - [ ] 길게 누르기 → 건너뛰기 메뉴
 - [ ] SwiftData 로컬 저장
 - [ ] CloudKit 동기화 (사용자 인증 + 디바이스 간 토큰 관리)
+- [ ] **인구통계 기반 권장 영양제 정보** — 5 카테고리 (연령대+성별+임산부) × 영양제 5~7종 × 4필드(description/dosage/timing/side_effects) ([ADR-0011](adr/0011-recommendations-feature.md))
+  - 백엔드 `GET /v1/recommendations` + `GET /v1/recommendations/:category`
+  - iOS 화면 로드 시 항상 fetch (캐시 X) — UI 통합은 [#35](https://github.com/kswift1/PillPouch/issues/35)에서
 
 ### Nice (V1 가능하면)
 - [ ] Apple Watch — Digital Crown으로 봉지 찢기
@@ -483,6 +486,15 @@ V1.0에 백엔드 포함 결정 시 처음 부딪히는 것들. 일정에 미리
 ---
 
 ## 변경 로그
+
+### v0.8 (2026-05-04)
+- **인구통계 기반 권장 영양제 정보 기능 V1 추가** ([ADR-0011](adr/0011-recommendations-feature.md))
+  - §V1 스코프 §Must에 항목 추가
+  - 백엔드 `GET /v1/recommendations` + `GET /v1/recommendations/:category` endpoint
+  - 5 카테고리 (연령대+성별+임산부): male_20s_30s / female_20s_30s / pregnant_lactating / male_40s_60s / female_40s_60s
+  - 영양제별 4필드 (description / dosage / timing / side_effects) 박제
+  - iOS UI 통합은 별도 Issue [#35](https://github.com/kswift1/PillPouch/issues/35) (별도 워크스페이스)
+- **Identity §표면 §핵심 기능 5번째 항목 추가** — Identity v1.0 → v1.1
 
 ### v0.7 (2026-05-03)
 - **"middle perforation" 명명 정정** — 실제 위치는 봉지 세로의 ~30% 지점 (`PouchGeometry.perforationY = 88pt / 320pt ≈ 27.5%`). "middle"은 부정확.
