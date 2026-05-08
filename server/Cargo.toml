@@ -18,8 +18,8 @@ repository = "https://github.com/kswift1/PillPouch"
 tokio = { version = "1", features = ["full"] }
 # HTTP framework (ADR-0001)
 axum = "0.7"
-tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors"] }
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "fs", "set-header"] }
 # DB (ADR-0001 sqlx compile-time check, ADR-0002 SQLite + Litestream)
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "sqlite", "chrono", "macros", "migrate"] }
 # Serde

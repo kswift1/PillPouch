@@ -1,5 +1,6 @@
 //! SQLite 접근 (sqlx) + 마이그레이션 + seed import.
 
+pub mod categories;
 pub mod recommendations;
 
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
@@ -50,6 +51,23 @@ pub async fn seed_recommendations_from_path(
     Ok(recs.len())
 }
 
+/// repo `server/seed/categories.json` → DB import.
+/// 이미 같은 key가 있으면 갱신 (UPSERT).
+///
+/// # Errors
+/// 파일 읽기 / JSON 파싱 / SQL 실패 시 에러 반환.
+pub async fn seed_categories_from_path(
+    pool: &SqlitePool,
+    path: impl AsRef<Path>,
+) -> Result<usize, SeedError> {
+    let bytes = tokio::fs::read(path.as_ref())
+        .await
+        .map_err(|e| SeedError::Io(e.to_string()))?;
+    let categories: Vec<domain::Category> = serde_json::from_slice(&bytes)?;
+    categories::upsert_many(pool, &categories).await?;
+    Ok(categories.len())
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum SeedError {
     #[error("io: {0}")]
@@ -66,17 +84,24 @@ mod tests {
     use super::{connect, migrate};
 
     #[tokio::test]
-    async fn 인메모리_DB로_마이그레이션이_성공한다() {
+    async fn 인메모리_DB로_마이그레이션이_성공하고_핵심_테이블이_존재한다() {
         let pool = connect("sqlite::memory:").await.expect("connect");
         migrate(&pool).await.expect("migrate");
 
-        // recommendations 테이블이 생성됐는지 SQLite system 카탈로그로 확인
-        let row: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='recommendations'",
-        )
-        .fetch_one(&pool)
-        .await
-        .expect("query");
-        assert_eq!(row.0, 1);
+        for table in ["recommendations", "category"] {
+            let row: (i64,) =
+                sqlx::query_as("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?")
+                    .bind(table)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("query");
+            assert_eq!(row.0, 1, "{table} table should exist");
+        }
+
+        let category_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM category")
+            .fetch_one(&pool)
+            .await
+            .expect("category count");
+        assert_eq!(category_count.0, 16);
     }
 }
