@@ -1,0 +1,130 @@
+[
+  {
+    "key": "omega3",
+    "display_name": "오메가-3",
+    "icon_path": "/assets/category-icons/omega3.png",
+    "display_order": 1,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "probiotics",
+    "display_name": "유산균",
+    "icon_path": "/assets/category-icons/probiotics.png",
+    "display_order": 2,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "vitaminC",
+    "display_name": "비타민 C",
+    "icon_path": "/assets/category-icons/vitaminC.png",
+    "display_order": 3,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "multivitamin",
+    "display_name": "종합 비타민",
+    "icon_path": "/assets/category-icons/multivitamin.png",
+    "display_order": 4,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "vitaminD",
+    "display_name": "비타민 D",
+    "icon_path": "/assets/category-icons/vitaminD.png",
+    "display_order": 5,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "vitaminB",
+    "display_name": "비타민 B",
+    "icon_path": "/assets/category-icons/vitaminB.png",
+    "display_order": 6,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "milkThistle",
+    "display_name": "밀크씨슬",
+    "icon_path": "/assets/category-icons/milkThistle.png",
+    "display_order": 7,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "glucosamine",
+    "display_name": "글루코사민",
+    "icon_path": "/assets/category-icons/glucosamine.png",
+    "display_order": 8,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "lutein",
+    "display_name": "루테인",
+    "icon_path": "/assets/category-icons/lutein.png",
+    "display_order": 9,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "collagen",
+    "display_name": "콜라겐",
+    "icon_path": "/assets/category-icons/collagen.png",
+    "display_order": 10,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "magnesium",
+    "display_name": "마그네슘",
+    "icon_path": "/assets/category-icons/magnesium.png",
+    "display_order": 11,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "calcium",
+    "display_name": "칼슘",
+    "icon_path": "/assets/category-icons/calcium.png",
+    "display_order": 12,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "iron",
+    "display_name": "철분",
+    "icon_path": "/assets/category-icons/iron.png",
+    "display_order": 13,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "zinc",
+    "display_name": "아연",
+    "icon_path": "/assets/category-icons/zinc.png",
+    "display_order": 14,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "coq10",
+    "display_name": "코엔자임 Q10",
+    "icon_path": "/assets/category-icons/coq10.png",
+    "display_order": 15,
+    "version": 1,
+    "updated_at": 1777388476
+  },
+  {
+    "key": "other",
+    "display_name": "기타",
+    "icon_path": "/assets/category-icons/other.png",
+    "display_order": 99,
+    "version": 1,
+    "updated_at": 1777388476
+  }
+]
