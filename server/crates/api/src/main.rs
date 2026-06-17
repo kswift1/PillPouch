@@ -7,7 +7,8 @@
 //! - `SEED_CATEGORIES_PATH` — 카테고리 seed JSON 경로. 있으면 부팅 시 import.
 //!   기본 `server/seed/categories.json` 상대 경로.
 //! - `STATIC_ASSETS_DIR` — `/assets/...` 정적 파일 루트. 기본 `server/assets`.
-//! - `BIND_ADDR` — listen 주소. 기본 `0.0.0.0:8080` (Fly.io 표준).
+//! - `BIND_ADDR` — listen 주소. 지정 시 `PORT`보다 우선.
+//! - `PORT` — Railway 주입 포트. `BIND_ADDR`가 없으면 `0.0.0.0:{PORT}`.
 
 use std::env;
 use std::net::SocketAddr;
@@ -34,9 +35,7 @@ async fn main() -> anyhow::Result<()> {
     });
     let assets_dir = env::var("STATIC_ASSETS_DIR")
         .unwrap_or_else(|_| first_existing_path(&["server/assets", "assets"]));
-    let bind_addr: SocketAddr = env::var("BIND_ADDR")
-        .unwrap_or_else(|_| "0.0.0.0:8080".to_string())
-        .parse()?;
+    let bind_addr = bind_addr_from_env(env::var("BIND_ADDR").ok(), env::var("PORT").ok())?;
 
     tracing::info!("connecting db: {database_url}");
     let pool = storage::connect(&database_url).await?;
@@ -82,4 +81,48 @@ fn first_existing_path(candidates: &[&str]) -> String {
                 .expect("first_existing_path requires candidates")
         })
         .to_string()
+}
+
+fn bind_addr_from_env(
+    bind_addr: Option<String>,
+    port: Option<String>,
+) -> Result<SocketAddr, std::net::AddrParseError> {
+    match bind_addr {
+        Some(addr) => addr.parse(),
+        None => match port {
+            Some(port) => format!("0.0.0.0:{port}").parse(),
+            None => "0.0.0.0:8080".parse(),
+        },
+    }
+}
+
+#[cfg(test)]
+#[allow(non_snake_case)] // 테스트 함수명은 한글 + 언더바 (CLAUDE.md / code-style.md §1)
+mod tests {
+    use super::bind_addr_from_env;
+
+    #[test]
+    fn BIND_ADDR가_PORT보다_우선한다() {
+        let addr = bind_addr_from_env(
+            Some("127.0.0.1:18081".to_string()),
+            Some("18080".to_string()),
+        )
+        .expect("bind addr");
+
+        assert_eq!(addr.to_string(), "127.0.0.1:18081");
+    }
+
+    #[test]
+    fn BIND_ADDR가_없으면_Railway_PORT를_사용한다() {
+        let addr = bind_addr_from_env(None, Some("18080".to_string())).expect("port addr");
+
+        assert_eq!(addr.to_string(), "0.0.0.0:18080");
+    }
+
+    #[test]
+    fn BIND_ADDR와_PORT가_없으면_기본_8080을_사용한다() {
+        let addr = bind_addr_from_env(None, None).expect("default addr");
+
+        assert_eq!(addr.to_string(), "0.0.0.0:8080");
+    }
 }

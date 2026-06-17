@@ -29,7 +29,8 @@ DATABASE_URL=sqlite::memory: cargo run -p api
 | `SEED_RECOMMENDATIONS_PATH` | `server/seed/recommendations.json` 또는 `seed/recommendations.json` | recommendations seed import |
 | `SEED_CATEGORIES_PATH` | `server/seed/categories.json` 또는 `seed/categories.json` | category seed import |
 | `STATIC_ASSETS_DIR` | `server/assets` 또는 `assets` | `/assets/...` 정적 파일 루트 |
-| `BIND_ADDR` | `0.0.0.0:8080` | listen 주소 |
+| `BIND_ADDR` | `0.0.0.0:8080` | listen 주소 (`PORT`보다 우선) |
+| `PORT` | — | Railway 주입 포트. `BIND_ADDR`가 없으면 `0.0.0.0:{PORT}` |
 
 ## 빌드 / 테스트
 
@@ -40,9 +41,17 @@ cargo clippy -- -D warnings
 cargo fmt --check
 ```
 
-## 배포 (예정, W3)
+## 배포
 
-Fly.io (도쿄 리전, `nrt`). 자세한 절차는 [`docs/runbooks/deploy.md`](../docs/runbooks/deploy.md).
+Railway project `PillPouch` / service `api`.
+
+현재 production URL:
+
+```text
+https://api-production-58ff5.up.railway.app
+```
+
+자세한 절차는 [`docs/runbooks/deploy.md`](../docs/runbooks/deploy.md).
 
 ## 의존성 설계 (예정 추가)
 - `axum`, `tokio`, `tower-http`

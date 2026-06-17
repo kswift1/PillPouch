@@ -1,7 +1,7 @@
 # ADR-0003: Fly.io 호스팅 (도쿄 리전)
 
 ## Status
-Accepted — 2026-04-27
+Superseded by [ADR-0012](0012-railway-hosting.md) — 2026-06-17
 
 ## Context
 백엔드 호스팅. PTS 푸시 스케줄러는 한국 사용자의 슬롯 시각(아침 8시 등)에 맞춰 정확히 발송해야 하므로 **레이턴시 중요**.

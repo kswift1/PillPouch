@@ -1,7 +1,7 @@
 //! Pill Pouch HTTP API (Axum, ADR-0001).
 //!
 //! V1 endpoint:
-//! - `GET /healthz` — Fly health check
+//! - `GET /healthz` — service health check
 //! - `GET /v1/categories` — 영양제 카테고리 카탈로그
 //! - `GET /v1/recommendations` — 인구통계 권장 영양제 전체 (Identity Anti-Promise §4 정합)
 //! - `GET /v1/recommendations/:category` — 단일 카테고리

@@ -50,8 +50,8 @@ cargo test
 
 - **iOS**: SwiftUI 네이티브, SwiftData, ActivityKit, WidgetKit, AppIntent (iOS 17.2+)
 - **백엔드**: Rust + Axum + sqlx + APNs HTTP/2
-- **DB**: SQLite + Litestream (R2 자동 백업)
-- **호스팅**: Fly.io (도쿄 리전)
+- **DB**: SQLite + Railway volume backup (Litestream/R2 보류)
+- **호스팅**: Railway
 - **CI**: GitHub Actions
 
 ## 라이선스

@@ -3,6 +3,8 @@
 ## Status
 Accepted — 2026-04-27
 
+Backup mechanism for Railway V1 superseded by [ADR-0013](0013-railway-volume-backups.md) — 2026-06-17
+
 ## Context
 백엔드(`server/`)가 저장하는 데이터는:
 - 사용자/디바이스 PTS 토큰 (1~2개/사용자)
