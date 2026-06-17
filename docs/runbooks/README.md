@@ -8,9 +8,9 @@
 |---|---|---|
 | [`github-repo-setup.md`](github-repo-setup.md) | ✅ 완료 | 진행 중 (메타 변경 시 즉시 갱신) |
 | [`apns-cert-setup.md`](apns-cert-setup.md) | 🟡 stub (목차 + 위험 메모) | W3 |
-| [`deploy.md`](deploy.md) | 🟡 stub (목차 + 위험 메모) | W3 |
+| [`deploy.md`](deploy.md) | ✅ Railway 배포 절차 | W3 |
 | [`ios-pts-debug.md`](ios-pts-debug.md) | 🟡 stub (목차 + 위험 메모) | W5 |
-| [`litestream-restore.md`](litestream-restore.md) | 🟡 stub (목차 + 위험 메모) | W3 |
+| [`litestream-restore.md`](litestream-restore.md) | ✅ Railway SQLite 백업/복구 (Litestream 보류) | W3 |
 
 ## 작성 룰
 - 명령어는 그대로 복사해 실행 가능한 형태로

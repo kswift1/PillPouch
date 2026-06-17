@@ -3,6 +3,8 @@
 ## Status
 Accepted — 2026-04-28
 
+Platform-specific Fly static portion superseded by [ADR-0014](0014-category-image-hosting-on-railway.md) for Railway V1 — 2026-06-17
+
 ## Context
 
 [ADR-0007](0007-server-catalog-as-source-of-truth.md)에서 영양제 카테고리 카탈로그를 서버 SoT로 결정. 카테고리 row마다 대표 이미지가 필요하고, 이 이미지를 어디서 hosting할지 별도 결정이 필요.

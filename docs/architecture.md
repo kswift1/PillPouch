@@ -6,8 +6,8 @@
 - iOS App (SwiftUI + SwiftData + ActivityKit + WidgetKit)
 - Widget Extension (Live Activity + Interactive Widget)
 - Rust 백엔드 (Axum + sqlx + APNs HTTP/2)
-- SQLite + Litestream (R2)
-- Fly.io (도쿄 리전)
+- SQLite + Railway volume backup (Litestream/R2 보류)
+- Railway
 
 ## TODO
 - [ ] 시스템 다이어그램 (Mermaid)
