@@ -45,7 +45,7 @@
 
 따라서 GitHub source 연결은 PR merge 후 또는 최종 승인 시점으로 넘긴다.
 
-Runbook에는 다음 명령을 박제했다.
+Runbook에는 root/config 선확인 후 다음 명령을 실행하도록 박제했다.
 
 ```bash
 railway service source connect \
@@ -121,7 +121,7 @@ Stage 5에서 다음을 진행한다.
 - PR 준비 문안 작성
 - 최종 승인 후 PR 생성/머지 절차
 
-GitHub autodeploy 연결은 PR merge 이후 다음 명령으로 수행한다.
+GitHub autodeploy 연결은 PR merge 이후 Railway service root `/server`와 config file path `/server/railway.toml`을 먼저 확인한 뒤 다음 명령으로 수행한다.
 
 ```bash
 railway service source connect \

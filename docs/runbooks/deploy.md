@@ -73,6 +73,16 @@ railway logs --service api --deployment <deployment-id> --lines 120
 - 이 PR이 `main`에 merge되어야 한다.
 - `main`에 `server/Dockerfile`, `server/railway.toml`, Railway `PORT` fallback 변경이 있어야 한다.
 
+연결 전 Dashboard에서 먼저 설정/저장:
+
+- Service root directory: `/server`
+- Config file path: `/server/railway.toml`
+- Dockerfile path: `Dockerfile`
+- Healthcheck path: `/healthz`
+- Volume: `api-volume` mounted at `/data`
+
+주의: `railway service source connect`는 root/config path를 함께 설정하지 않는다. 위 설정 없이 연결하면 GitHub build가 repo root에서 시작되어 `server/Dockerfile`과 `server/railway.toml`을 찾지 못할 수 있다.
+
 연결 명령:
 
 ```bash
@@ -88,14 +98,6 @@ railway service source connect \
 ```bash
 railway service list --json | jq '.[] | select(.name=="api") | {source,url,status}'
 ```
-
-Dashboard에서 확인할 항목:
-
-- Service root directory: `/server`
-- Config file path: `/server/railway.toml`
-- Dockerfile path: `Dockerfile`
-- Healthcheck path: `/healthz`
-- Volume: `api-volume` mounted at `/data`
 
 GitHub 연결 후에는 `main` push/merge가 Railway deployment를 트리거한다.
 

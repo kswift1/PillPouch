@@ -12,7 +12,7 @@ use thiserror::Error;
 ///
 /// `key` = lowerCamel 식별자 (예: `omega3`, `milkThistle`).
 /// `display_name` = 한국어 표시명.
-/// `icon_path` = Fly static 상대 경로 (`/assets/category-icons/{key}.png`).
+/// `icon_path` = app static 상대 경로 (`/assets/category-icons/{key}.png`).
 /// `display_order` = 사용자 표시 순서.
 /// `version` = 증분 동기화 기준 버전.
 /// `updated_at` = Unix epoch seconds.

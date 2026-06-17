@@ -129,7 +129,7 @@ Report: [task_W3_37_stage3.md](task_W3_37_stage3.md)
 
 - Rewrote [deploy.md](../runbooks/deploy.md) as the Railway deploy runbook.
 - Updated runbook index and operating docs to Railway wording.
-- Documented the post-merge GitHub autodeploy command:
+- Documented the post-merge GitHub autodeploy checklist: first set/verify Railway service root `/server` and config file path `/server/railway.toml`, then connect the GitHub source.
 
 ```bash
 railway service source connect \
@@ -306,7 +306,8 @@ Before PR creation:
 
 After PR merge:
 
-1. Connect Railway GitHub source:
+1. In Railway Dashboard, set/verify service root `/server`, config file path `/server/railway.toml`, Dockerfile path `Dockerfile`, healthcheck `/healthz`, and volume `/data`.
+2. Connect Railway GitHub source:
 
 ```bash
 railway service source connect \
@@ -316,8 +317,8 @@ railway service source connect \
   --json
 ```
 
-2. Confirm a GitHub-source deployment succeeds.
-3. Re-run production smoke tests.
+3. Confirm a GitHub-source deployment succeeds.
+4. Re-run production smoke tests.
 
 ## Approval request
 
